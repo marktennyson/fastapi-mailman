@@ -1,7 +1,7 @@
 """
 Backend for test environment.
 """
-from flask_mailman.backends.base import BaseEmailBackend
+from fastapi_mailman.backends.base import BaseEmailBackend
 
 
 class EmailBackend(BaseEmailBackend):

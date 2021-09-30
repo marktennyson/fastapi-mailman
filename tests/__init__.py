@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import pytest
 from flask import Flask
 
-from flask_mailman import Mail
+from fastapi_mailman import Mail
 
 
 class TestCase(unittest.TestCase):

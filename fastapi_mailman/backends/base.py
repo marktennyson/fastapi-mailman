@@ -1,5 +1,4 @@
 """Base email backend class."""
-from flask import current_app
 
 
 class BaseEmailBackend:
@@ -19,11 +18,11 @@ class BaseEmailBackend:
     def __init__(self, mailman=None, fail_silently=False, **kwargs):
         self.fail_silently = fail_silently
         try:
-            self.mailman = mailman or current_app.extensions['mailman']
+            self.mailman = mailman
         except KeyError:
-            raise RuntimeError("The current application was not configured with Flask-Mailman")
+            raise RuntimeError("The current application was not configured with Fastapi-Mailman")
 
-    def open(self):
+    async def open(self):
         """
         Open a network connection.
 
@@ -42,22 +41,22 @@ class BaseEmailBackend:
         """
         pass
 
-    def close(self):
+    async def close(self):
         """Close a network connection."""
         pass
 
-    def __enter__(self):
+    async def __aenter__(self):
         try:
-            self.open()
+            await self.open()
         except Exception:
-            self.close()
+            await self.close()
             raise
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self.close()
 
-    def send_messages(self, email_messages):
+    async def send_messages(self, email_messages):
         """
         Send one or more EmailMessage objects and return the number of email
         messages sent.

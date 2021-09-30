@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
-from flask_mailman import EmailMessage
-from flask_mailman.backends import locmem, smtp
+from fastapi_mailman import EmailMessage
+from fastapi_mailman.backends import locmem, smtp
 from tests import TestCase
 
 
@@ -101,7 +101,7 @@ class TestBackend(TestCase):
 
     def test_import_path_locmem_backend(self):
         for i, backend_path in enumerate(
-            ["flask_mailman.backends.locmem", "flask_mailman.backends.locmem.EmailBackend"]
+            ["fastapi_mailman.backends.locmem", "fastapi_mailman.backends.locmem.EmailBackend"]
         ):
             with self.subTest():
                 self.app.extensions['mailman'].backend = backend_path

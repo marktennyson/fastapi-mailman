@@ -1,4 +1,4 @@
-sources = flask_mailman
+sources = fastapi_mailman
 
 .PHONY: test format lint unittest coverage pre-commit clean
 test: format lint unittest

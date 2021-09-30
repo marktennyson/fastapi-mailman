@@ -1,4 +1,4 @@
-# Welcome to Flask-Mailman
+# Welcome to Fastapi-Mailman
 
 The core part of this extension's source code comes directly from Django's mail module, but with a few interface [differences](#differences-with-django).
 
@@ -8,12 +8,12 @@ And following documentation also draws heavily from Django's.
 
 Install with `pip`:
 ```bash
-pip install Flask-Mailman
+pip install Fastapi-Mailman
 ```
 
 ## Configuration
 
-Flask-Mailman is configured through the standard Flask config API. A list of configuration keys currently understood by the extension:
+Fastapi-Mailman is configured through the standard Flask config API. A list of configuration keys currently understood by the extension:
 
 - **MAIL_SERVER**: The host to use for sending email.
 
@@ -23,11 +23,11 @@ Flask-Mailman is configured through the standard Flask config API. A list of con
 
     default 25.
 
-- **MAIL_USERNAME**: Username to use for the SMTP server. If empty, Flask-Mailman won’t attempt authentication.
+- **MAIL_USERNAME**: Username to use for the SMTP server. If empty, Fastapi-Mailman won’t attempt authentication.
 
     default None.
 
-- **MAIL_PASSWORD**: Password to use for the SMTP server defined in MAIL_HOST. This setting is used in conjunction with MAIL_USERNAME when authenticating to the SMTP server. If either of these configs is empty, Flask-Mailman won’t attempt authentication.
+- **MAIL_PASSWORD**: Password to use for the SMTP server defined in MAIL_HOST. This setting is used in conjunction with MAIL_USERNAME when authenticating to the SMTP server. If either of these configs is empty, Fastapi-Mailman won’t attempt authentication.
 
     default None.
 
@@ -72,7 +72,7 @@ Flask-Mailman is configured through the standard Flask config API. A list of con
 Emails are managed through a *Mail* instance:
 ```python
 from flask import Flask
-from flask_mailman import Mail
+from fastapi_mailman import Mail
 
 app = Flask(__name__)
 mail = Mail(app)
@@ -82,7 +82,7 @@ In this case all emails are sent using the configuration values of the applicati
 Alternatively you can set up your *Mail* instance later at configuration time, using the `init_app` method:
 ```python
 from flask import Flask
-from flask_mailman import Mail
+from fastapi_mailman import Mail
 
 mail = Mail()
 
@@ -95,7 +95,7 @@ In this case emails will be sent using the configuration values from Flask’s `
 
 To send a message first create a `EmailMessage` instance:
 ```python hl_lines="3-11"
-from flask_mailman import EmailMessage
+from fastapi_mailman import EmailMessage
 
 msg = EmailMessage(
     'Hello',
@@ -110,7 +110,7 @@ msg.send()
 ```
 Then send the message using `send()` method:
 ```python hl_lines="12 13"
-from flask_mailman import EmailMessage
+from fastapi_mailman import EmailMessage
 
 msg = EmailMessage(
     'Hello',
@@ -149,7 +149,7 @@ If the keyword argument `fail_silently` is True, exceptions raised while sending
 By default, the **MIME** type of the body parameter in an `EmailMessage` is "text/plain". It is good practice to leave this alone, because it guarantees that any recipient will be able to read the email, regardless of their mail client. However, if you are confident that your recipients can handle an alternative content type, you can use the `content_subtype` attribute on the `EmailMessage` class to change the main content type. The major type will always be "text", but you can change the subtype. For example:
 
 ```python
-from flask_mailman import EmailMessage
+from fastapi_mailman import EmailMessage
 
 subject, from_email, to = 'hello', 'from@example.com', 'to@example.com'
 html_content = '<p>This is an <strong>important</strong> message.</p>'
@@ -171,7 +171,7 @@ For example, if you have a function called `get_notification_email()` that retur
 
 ```python
 from flask import Flask
-from flask_mailman import Mail
+from fastapi_mailman import Mail
 
 app = Flask(__name__)
 mail = Mail(app)
@@ -187,7 +187,7 @@ The second approach is to use the `open()` and `close()` methods on the email ba
 
 ```python
 from flask import Flask
-from flask_mailman import Mail, EmailMessage
+from fastapi_mailman import Mail, EmailMessage
 
 app = Flask(__name__)
 mail = Mail(app)
@@ -232,7 +232,7 @@ Of course there is always a short writing using `with`:
 
 ```python
 from flask import Flask
-from flask_mailman import Mail, EmailMessage
+from fastapi_mailman import Mail, EmailMessage
 
 app = Flask(__name__)
 mail = Mail(app)
@@ -278,7 +278,7 @@ You can use the following two methods to adding attachments:
         message.attach('design.png', img_data, 'image/png')
         ```
 
-        If you specify a mimetype of message/rfc822, it will also accept `flask_mailman.EmailMessage` and `email.message.Message`.
+        If you specify a mimetype of message/rfc822, it will also accept `fastapi_mailman.EmailMessage` and `email.message.Message`.
 
         For a mimetype starting with text/, content is expected to be a string. Binary data will be decoded using UTF-8, and if that fails, the MIME type will be changed to application/octet-stream and the data will be attached unchanged.
 
@@ -296,7 +296,7 @@ You can use the following two methods to adding attachments:
 
 Header injection is a security exploit in which an attacker inserts extra email headers to control the “To:” and “From:” in email messages that your scripts generate.
 
-The Flask-Mailman email methods outlined above all protect against header injection by forbidding newlines in header values. If any `subject`, `from_email` or `recipient_list` contains a newline (in either Unix, Windows or Mac style), the email method (e.g. `send_mail()`) will raise `flask_mailman.BadHeaderError` (a subclass of `ValueError`) and, hence, will not send the email. It’s your responsibility to validate all data before passing it to the email functions.
+The Fastapi-Mailman email methods outlined above all protect against header injection by forbidding newlines in header values. If any `subject`, `from_email` or `recipient_list` contains a newline (in either Unix, Windows or Mac style), the email method (e.g. `send_mail()`) will raise `fastapi_mailman.BadHeaderError` (a subclass of `ValueError`) and, hence, will not send the email. It’s your responsibility to validate all data before passing it to the email functions.
 
 If a message contains headers at the start of the string, the headers will be printed as the first bit of the email message.
 
@@ -307,7 +307,7 @@ It can be useful to include multiple versions of the content in an email; the cl
 To send a text and HTML combination, you could write:
 
 ```python
-from flask_mailman import EmailMultiAlternatives
+from fastapi_mailman import EmailMultiAlternatives
 
 subject, from_email, to = 'hello', 'from@example.com', 'to@example.com'
 text_content = 'This is an important message.'
@@ -331,7 +331,7 @@ It can also be used as a context manager, which will automatically call `open()`
 
 ```python
 from flask import Flask
-from flask_mailman import Mail
+from fastapi_mailman import Mail
 
 app = Flask(__name__)
 mail = Mail(app)
@@ -360,7 +360,7 @@ The `fail_silently` argument controls how the backend should handle errors. If `
 
 All other arguments are passed directly to the constructor of the email backend.
 
-Flask-Mailman ships with several email sending backends. With the exception of the SMTP backend (which is the default), these backends are only useful during testing and development. If you have special email sending requirements, you can write your own email backend.
+Fastapi-Mailman ships with several email sending backends. With the exception of the SMTP backend (which is the default), these backends are only useful during testing and development. If you have special email sending requirements, you can write your own email backend.
 
 ### SMTP backend
 
@@ -393,7 +393,7 @@ The value for each argument is retrieved from the matching configuration if the 
 - ssl_keyfile: MAIL_SSL_KEYFILE
 - ssl_certfile: MAIL_SSL_CERTFILE
 
-The SMTP backend is the default configuration inherited by Flask-Mailman. If you want to specify it explicitly, put the following in your configurations:
+The SMTP backend is the default configuration inherited by Fastapi-Mailman. If you want to specify it explicitly, put the following in your configurations:
 
 ```
 MAIL_BACKEND = 'smtp'
@@ -455,14 +455,14 @@ If you need to change how emails are sent you can write your own email backend.
 The `MAIL_BACKEND` configuration in your settings file is then the Python import path for your backend class. for example:
 
 ```
-MAIL_BACKEND = 'flask_mailman.backens.custom'
+MAIL_BACKEND = 'fastapi_mailman.backens.custom'
 ```
 
-A more direct way is to import your custom backend class, and pass it to `flask_mailman.get_connection` function:
+A more direct way is to import your custom backend class, and pass it to `fastapi_mailman.get_connection` function:
 
 ```python
 from flask import Flask
-from flask_mailman import Mail
+from fastapi_mailman import Mail
 
 from your_custom_backend import CustomBackend
 
@@ -473,12 +473,12 @@ connection = mail.get_connection(backend=CustomBackend)
 connection.send_messages(messages)
 ```
 
-Custom email backends should subclass `BaseEmailBackend` that is located in the `flask_mailman.backends.base` module.
+Custom email backends should subclass `BaseEmailBackend` that is located in the `fastapi_mailman.backends.base` module.
 A custom email backend must implement the `send_messages(email_messages)` method.
 This method receives a list of `EmailMessage` instances and returns the number of successfully delivered messages.
 If your backend has any concept of a persistent session or connection, you should also implement the `open()` and `close()` methods.
 
-Refer to `flask_mailman.backends.smtp.EmailBackend` for a reference implementation.
+Refer to `fastapi_mailman.backends.smtp.EmailBackend` for a reference implementation.
 
 ## Convenient functions
 
@@ -491,11 +491,11 @@ The subject, message, from_email and recipient_list parameters are required.
 
 - **subject**: A string.
 - **message**: A string.
-- **from_email**: A string. If None, Flask-Mailman will use the value of the MAIL_DEFAULT_SENDER configuration.
+- **from_email**: A string. If None, Fastapi-Mailman will use the value of the MAIL_DEFAULT_SENDER configuration.
 - **recipient_list**: A list of strings, each an email address. Each member of `recipient_list` will see the other recipients in the “To:” field of the email message.
 - **fail_silently**: A boolean. When it’s False, `send_mail()` will raise an `smtplib.SMTPException` if an error occurs. See the smtplib docs for a list of possible exceptions, all of which are subclasses of `SMTPException`.
-- **auth_user**: The optional username to use to authenticate to the SMTP server. If this isn’t provided, Flask-Mailman will use the value of the MAIL_USERNAME configuration.
-- **auth_password**: The optional password to use to authenticate to the SMTP server. If this isn’t provided, Flask-Mailman will use the value of the MAIL_PASSWORD configuration.
+- **auth_user**: The optional username to use to authenticate to the SMTP server. If this isn’t provided, Fastapi-Mailman will use the value of the MAIL_USERNAME configuration.
+- **auth_password**: The optional password to use to authenticate to the SMTP server. If this isn’t provided, Fastapi-Mailman will use the value of the MAIL_PASSWORD configuration.
 - **connection**: The optional email backend to use to send the mail. If unspecified, an instance of the default backend will be used. See the documentation on Email backends for more details.
 - **html_message**: If `html_message` is provided, the resulting email will be a multipart/alternative email with message as the text/plain content type and html_message as the text/html content type.
 
@@ -520,7 +520,7 @@ For example, the following code would send two different messages to two differe
 
 ```python
 from flask import Flask
-from flask_mailman import Mail
+from fastapi_mailman import Mail
 
 app = Flask(__name__)
 mail = Mail(app)

@@ -9,7 +9,7 @@ You can contribute in many ways:
 
 ### Report Bugs
 
-Report bugs at https://github.com/waynerv/flask-mailman/issues.
+Report bugs at https://github.com/marktennyson/fastapi-mailman/issues.
 
 If you are reporting a bug, please include:
 
@@ -29,13 +29,13 @@ and "help wanted" is open to whoever wants to implement it.
 
 ### Write Documentation
 
-Flask-Mailman could always use more documentation, whether as part of the
-official Flask-Mailman docs, in docstrings, or even on the web in blog posts,
+Fastapi-Mailman could always use more documentation, whether as part of the
+official Fastapi-Mailman docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 ### Submit Feedback
 
-The best way to send feedback is to file an issue at https://github.com/waynerv/flask-mailman/issues.
+The best way to send feedback is to file an issue at https://github.com/marktennyson/fastapi-mailman/issues.
 
 If you are proposing a feature:
 
@@ -96,7 +96,7 @@ Before you submit a pull request, check that it meets these guidelines:
    your new functionality into a function with a docstring, and add the
    feature to the list in README.md.
 3. The pull request should work for Python 3.6, 3.7, 3.8, 3.9. Check
-   https://github.com/waynerv/flask-mailman/actions
+   https://github.com/marktennyson/fastapi-mailman/actions
    and make sure that the tests pass for all supported Python versions.
 
 ## Tips

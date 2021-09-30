@@ -14,9 +14,13 @@ from email.utils import formataddr, formatdate, getaddresses, make_msgid
 from io import BytesIO, StringIO
 from pathlib import Path
 
-from flask import current_app
+from fastapi_mailman.utils import DNS_NAME, force_str, punycode
 
-from flask_mailman.utils import DNS_NAME, force_str, punycode
+import typing as t
+
+if t.TYPE_CHECKING:
+    from . import Mailman
+    from .backends.base import BaseEmailBackend
 
 # Don't BASE64-encode UTF-8 messages so that we avoid unwanted attention from
 # some spam filters.
@@ -53,8 +57,9 @@ ADDRESS_HEADERS = {
 
 
 def forbid_multi_line_headers(name, val, encoding):
+    
     """Forbid multi-line headers to prevent header injection."""
-    encoding = encoding or current_app.extensions['mailman'].default_charset
+    encoding = encoding
     val = str(val)  # val may be lazy
     if '\n' in val or '\r' in val:
         raise BadHeaderError("Header values can't contain newlines (got %r for header %r)" % (val, name))
@@ -185,6 +190,7 @@ class EmailMessage:
 
     def __init__(
         self,
+        mailman:"Mailman",
         subject='',
         body='',
         from_email=None,
@@ -200,6 +206,7 @@ class EmailMessage:
         Initialize a single email message (which can be sent to multiple
         recipients).
         """
+        self.mailman = mailman
         if to:
             if isinstance(to, str):
                 raise TypeError('"to" argument must be a list or tuple')
@@ -224,7 +231,7 @@ class EmailMessage:
             self.reply_to = list(reply_to)
         else:
             self.reply_to = []
-        self.from_email = from_email or current_app.extensions['mailman'].default_sender
+        self.from_email = from_email or mailman.default_sender
         self.subject = subject
         self.body = body or ''
         self.attachments = []
@@ -237,16 +244,16 @@ class EmailMessage:
         self.extra_headers = headers or {}
         self.connection = connection
 
-    def get_connection(self, fail_silently=False):
+    def get_connection(self, fail_silently=False) -> "BaseEmailBackend":
         if not self.connection:
             try:
-                self.connection = current_app.extensions['mailman'].get_connection(fail_silently=fail_silently)
+                self.connection = self.mailman.get_connection(fail_silently=fail_silently)
             except KeyError:
-                raise RuntimeError("The current application was not configured with Flask-Mailman")
+                raise RuntimeError("The current application was not configured with Fastapi-Mailman")
         return self.connection
 
     def message(self):
-        encoding = self.encoding or current_app.extensions['mailman'].default_charset
+        encoding = self.encoding or self.mailman.default_charset
         msg = SafeMIMEText(self.body, self.content_subtype, encoding)
         msg = self._create_message(msg)
         msg['Subject'] = self.subject
@@ -263,7 +270,7 @@ class EmailMessage:
             # the stdlib/OS concept of a timezone, however, Django sets the
             # TZ environment variable based on the TIME_ZONE setting which
             # will get picked up by formatdate().
-            msg['Date'] = formatdate(localtime=current_app.extensions['mailman'].use_localtime)
+            msg['Date'] = formatdate(localtime=self.mailman.use_localtime)
         if 'message-id' not in header_names:
             # Use cached DNS_NAME for performance
             msg['Message-ID'] = make_msgid(domain=DNS_NAME)
@@ -279,13 +286,14 @@ class EmailMessage:
         """
         return [email for email in (self.to + self.cc + self.bcc) if email]
 
-    def send(self, fail_silently=False):
+    async def send(self, fail_silently=False):
         """Send the email message."""
         if not self.recipients():
             # Don't bother creating the network connection if there's nobody to
             # send to.
             return 0
-        return self.get_connection(fail_silently).send_messages([self])
+        async with self.get_connection(fail_silently) as conn:
+            return await conn.send_messages([self])
 
     def attach(self, filename=None, content=None, mimetype=None):
         """
@@ -341,7 +349,7 @@ class EmailMessage:
 
     def _create_attachments(self, msg):
         if self.attachments:
-            encoding = self.encoding or current_app.extensions['mailman'].default_charset
+            encoding = self.encoding or self.mailman.default_charset
             body_msg = msg
             msg = SafeMIMEMultipart(_subtype=self.mixed_subtype, encoding=encoding)
             if self.body or body_msg.is_multipart():
@@ -362,7 +370,7 @@ class EmailMessage:
         """
         basetype, subtype = mimetype.split('/', 1)
         if basetype == 'text':
-            encoding = self.encoding or current_app.extensions['mailman'].default_charset
+            encoding = self.encoding or self.mailman.default_charset
             attachment = SafeMIMEText(content, subtype, encoding)
         elif basetype == 'message' and subtype == 'rfc822':
             # Bug #18967: per RFC2046 s5.2.1, message/rfc822 attachments
@@ -421,6 +429,7 @@ class EmailMultiAlternatives(EmailMessage):
 
     def __init__(
         self,
+        mailman:"Mailman",
         subject='',
         body='',
         from_email=None,
@@ -438,6 +447,7 @@ class EmailMultiAlternatives(EmailMessage):
         recipients).
         """
         super().__init__(
+            mailman,
             subject,
             body,
             from_email,
@@ -461,7 +471,7 @@ class EmailMultiAlternatives(EmailMessage):
         return self._create_attachments(self._create_alternatives(msg))
 
     def _create_alternatives(self, msg):
-        encoding = self.encoding or current_app.extensions['mailman'].default_charset
+        encoding = self.encoding or self.mailman.default_charset
         if self.alternatives:
             body_msg = msg
             msg = SafeMIMEMultipart(_subtype=self.alternative_subtype, encoding=encoding)

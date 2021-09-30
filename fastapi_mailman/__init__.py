@@ -1,13 +1,9 @@
 """
 Tools for sending email.
 """
-import types
-import typing as t
 from importlib import import_module
 
-from flask import current_app
-
-from flask_mailman.utils import DNS_NAME, CachedDnsName
+from fastapi_mailman.utils import DNS_NAME, CachedDnsName
 
 from .message import (
     DEFAULT_ATTACHMENT_MIME_TYPE,
@@ -19,9 +15,15 @@ from .message import (
     forbid_multi_line_headers,
     make_msgid,
 )
+import types as ty
+import typing as t
 
 if t.TYPE_CHECKING:
-    from flask_mailman.backends.base import BaseEmailBackend
+    from fastapi_mailman.backends.base import BaseEmailBackend
+    from .config import ConnectionConfig
+    Mailman =t.TypeVar("Mailman", bound="Mail")
+
+MAILMAN:t.Optional["Mailman"] = None
 
 __all__ = [
     'CachedDnsName',
@@ -42,6 +44,7 @@ available_backends = ['console', 'dummy', 'file', 'smtp', 'locmem']
 
 
 class _MailMixin(object):
+    
     def _get_backend_from_module(self, backend_module_name: str, backend_class_name: str) -> "BaseEmailBackend":
         """
         import the backend module and return the backend class.
@@ -52,14 +55,14 @@ class _MailMixin(object):
         :param backend_class_name:
             the string based backend class name.
         """
-        backend_module: types.ModuleType = import_module(backend_module_name)
+        backend_module: ty.ModuleType = import_module(backend_module_name)
         backend: "BaseEmailBackend" = getattr(backend_module, backend_class_name)
         return backend
 
     def import_backend(self, backend_name: t.Any) -> "BaseEmailBackend":
         """
         This is the base method to import the backend service.
-        This method will implement the feature for flask_mailman to take custom backends.
+        This method will implement the feature for fastapi_mailman to take custom backends.
 
         Now you can create your own backend class and implement with flask mailman.
 
@@ -72,9 +75,9 @@ class _MailMixin(object):
             #or
             app.config['MAIL_BACKEND'] = 'smtp'
             #or
-            app.config['MAIL_BACKEND'] = 'flask_mailman.backends.locmem'
+            app.config['MAIL_BACKEND'] = 'fastapi_mailman.backends.locmem'
             #or
-            app.config['MAIL_BACKEND'] = 'flask_mailman.backends.locmem.EmailBackend'
+            app.config['MAIL_BACKEND'] = 'fastapi_mailman.backends.locmem.EmailBackend'
             #or
             app.config['MAIL_BACKEND'] = 'your_project.mail.backends.custom.EmailBackend'
         """
@@ -84,7 +87,7 @@ class _MailMixin(object):
             backend = backend_name
 
         else:
-            default_backend_loc: str = "flask_mailman.backends"
+            default_backend_loc: str = "fastapi_mailman.backends"
             default_backend_class: str = "EmailBackend"
 
             if "." not in backend_name:
@@ -109,15 +112,8 @@ class _MailMixin(object):
         Both fail_silently and other keyword arguments are used in the
         constructor of the backend.
         """
-        app = getattr(self, "app", None) or current_app
         try:
-            mailman = app.extensions['mailman']
-        except KeyError:
-            raise RuntimeError("The current application was not configured with Flask-Mailman")
-
-        try:
-            if backend is None:
-                backend = mailman.backend
+            backend = backend or MAILMAN.backend
 
             klass = self.import_backend(backend)
 
@@ -128,9 +124,9 @@ class _MailMixin(object):
             )
             raise RuntimeError(err_msg)
 
-        return klass(mailman=mailman, fail_silently=fail_silently, **kwds)
+        return klass(mailman=MAILMAN, fail_silently=fail_silently, **kwds)
 
-    def send_mail(
+    async def send_mail(
         self,
         subject,
         message,
@@ -154,13 +150,13 @@ class _MailMixin(object):
             password=auth_password,
             fail_silently=fail_silently,
         )
-        mail = EmailMultiAlternatives(subject, message, from_email, recipient_list, connection=connection)
+        mail = EmailMultiAlternatives(MAILMAN, subject, message, from_email, recipient_list, connection=connection)
         if html_message:
             mail.attach_alternative(html_message, 'text/html')
 
-        return mail.send()
+        return await mail.send()
 
-    def send_mass_mail(self, datatuple, fail_silently=False, auth_user=None, auth_password=None, connection=None):
+    async def send_mass_mail(self, datatuple, fail_silently=False, auth_user=None, auth_password=None, connection=None):
         """
         Given a datatuple of (subject, message, from_email, recipient_list), send
         each message to each recipient list. Return the number of emails sent.
@@ -173,16 +169,16 @@ class _MailMixin(object):
         Note: The API for this method is frozen. New code wanting to extend the
         functionality should use the EmailMessage class directly.
         """
-        connection = connection or self.get_connection(
+        connection = connection or await self.get_connection(
             username=auth_user,
             password=auth_password,
             fail_silently=fail_silently,
         )
         messages = [
-            EmailMessage(subject, message, sender, recipient, connection=connection)
+            EmailMessage(MAILMAN, subject, message, sender, recipient, connection=connection)
             for subject, message, sender, recipient in datatuple
         ]
-        return connection.send_messages(messages)
+        return await connection.send_messages(messages)
 
 
 class _Mail(_MailMixin):
@@ -224,54 +220,39 @@ class _Mail(_MailMixin):
 class Mail(_MailMixin):
     """Manages email messaging
 
-    :param app: Flask instance
+    :param config: Default ConnectionConfig pydantic instance
     """
 
-    def __init__(self, app=None):
-        self.app = app
-        if app is not None:
-            self.state = self.init_app(app)
-        else:
-            self.state = None
+    def __init__(self, config:"ConnectionConfig"):
+        self.config:"ConnectionConfig" = config
+        self.state = self.initIns()
 
-    @staticmethod
-    def init_mail(config, testing=False):
-        # Set default mail backend in different environment
-        mail_backend = config.get('MAIL_BACKEND')
-        if mail_backend is None or mail_backend == str():
-            mail_backend = 'locmem' if testing else 'smtp'
+
+    def init_mail(self, config:"ConnectionConfig"):
+        config_dict = config.dict()
 
         return _Mail(
-            config.get('MAIL_SERVER', 'localhost'),
-            config.get('MAIL_PORT', 25),
-            config.get('MAIL_USERNAME'),
-            config.get('MAIL_PASSWORD'),
-            config.get('MAIL_USE_TLS', False),
-            config.get('MAIL_USE_SSL', False),
-            config.get('MAIL_DEFAULT_SENDER'),
-            config.get('MAIL_TIMEOUT'),
-            config.get('MAIL_SSL_KEYFILE'),
-            config.get('MAIL_SSL_CERTFILE'),
-            config.get('MAIL_USE_LOCALTIME', False),
-            config.get('MAIL_FILE_PATH'),
-            config.get('MAIL_DEFAULT_CHARSET', 'utf-8'),
-            mail_backend,
+            config_dict.get('MAIL_SERVER'),
+            config_dict.get('MAIL_PORT'),
+            config_dict.get('MAIL_USERNAME'),
+            config_dict.get('MAIL_PASSWORD'),
+            config_dict.get('MAIL_USE_TLS'),
+            config_dict.get('MAIL_USE_SSL'),
+            config_dict.get('MAIL_DEFAULT_SENDER'),
+            config_dict.get('MAIL_TIMEOUT'),
+            config_dict.get('MAIL_SSL_KEYFILE'),
+            config_dict.get('MAIL_SSL_CERTFILE'),
+            config_dict.get('MAIL_USE_LOCALTIME'),
+            config_dict.get('MAIL_FILE_PATH'),
+            config_dict.get('MAIL_DEFAULT_CHARSET'),
+            config_dict.get('MAIL_BACKEND'),
         )
 
-    def init_app(self, app):
-        """Initializes your mail settings from the application settings.
-
-        You can use this if you want to set up your Mail instance
-        at configuration time.
-
-        :param app: Flask application instance
-        """
-        state = self.init_mail(app.config, app.testing)
-
-        # register extension with app
-        app.extensions = getattr(app, 'extensions', {})
-        app.extensions['mailman'] = state
+    def initIns(self):
+        state = self.init_mail(self.config)
+        global MAILMAN
+        MAILMAN = state
         return state
 
     def __getattr__(self, name):
-        return getattr(self.state, name, None)
+        return getattr(self.state, name)

@@ -1,6 +1,6 @@
 import pytest
 
-from flask_mailman import BadHeaderError, EmailMessage
+from fastapi_mailman import BadHeaderError, EmailMessage
 from tests import TestCase
 
 

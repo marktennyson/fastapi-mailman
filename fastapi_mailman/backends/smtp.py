@@ -1,11 +1,13 @@
 """SMTP email backend class."""
-import smtplib
+import aiosmtplib
 import ssl
 import threading
 
-from flask_mailman.backends.base import BaseEmailBackend
-from flask_mailman.message import sanitize_address
-from flask_mailman.utils import DNS_NAME
+from fastapi_mailman.backends.base import BaseEmailBackend
+from fastapi_mailman.message import sanitize_address
+from fastapi_mailman.utils import DNS_NAME
+
+import typing as t
 
 
 class EmailBackend(BaseEmailBackend):
@@ -45,10 +47,10 @@ class EmailBackend(BaseEmailBackend):
         self._lock = threading.RLock()
 
     @property
-    def connection_class(self):
-        return smtplib.SMTP_SSL if self.use_ssl else smtplib.SMTP
+    def connection_class(self) -> t.Type["aiosmtplib.SMTP"]:
+        return aiosmtplib.SMTP
 
-    def open(self):
+    async def open(self):
         """
         Ensure an open connection to the email server. Return whether or not a
         new connection was required (True or False) or None if an exception
@@ -60,50 +62,55 @@ class EmailBackend(BaseEmailBackend):
 
         # If local_hostname is not specified, socket.getfqdn() gets used.
         # For performance, we use the cached FQDN for local_hostname.
-        connection_params = {'local_hostname': DNS_NAME.get_fqdn()}
+        # connection_params = {'local_hostname': DNS_NAME.get_fqdn()}
+        connection_params = dict()
         if self.timeout is not None:
             connection_params['timeout'] = self.timeout
         if self.use_ssl:
             connection_params.update(
                 {
-                    'keyfile': self.ssl_keyfile,
-                    'certfile': self.ssl_certfile,
+                    'client_key': self.ssl_keyfile,
+                    'client_cert': self.ssl_certfile,
                 }
             )
         try:
             self.connection = self.connection_class(self.host, self.port, **connection_params)
-
             # TLS/SSL are mutually exclusive, so only attempt TLS over
             # non-secure connections.
+            await self.connection.connect()
+
             if not self.use_ssl and self.use_tls:
-                self.connection.starttls(keyfile=self.ssl_keyfile, certfile=self.ssl_certfile)
+                await self.connection.starttls(client_key=self.ssl_keyfile, client_cert=self.ssl_certfile)
+            
             if self.username and self.password:
-                self.connection.login(self.username, self.password)
+                await self.connection.login(self.username, self.password)
+            
             return True
+
         except OSError:
             if not self.fail_silently:
                 raise
 
-    def close(self):
+    async def close(self):
         """Close the connection to the email server."""
         if self.connection is None:
             return
         try:
             try:
-                self.connection.quit()
-            except (ssl.SSLError, smtplib.SMTPServerDisconnected):
+                await self.connection.quit()
+            except (ssl.SSLError, aiosmtplib.SMTPServerDisconnected):
                 # This happens when calling quit() on a TLS connection
                 # sometimes, or when the connection was already disconnected
                 # by the server.
                 self.connection.close()
-            except smtplib.SMTPException:
+            except aiosmtplib.SMTPException:
                 if self.fail_silently:
                     return
                 raise
         finally:
             self.connection = None
 
-    def send_messages(self, email_messages):
+    async def send_messages(self, email_messages):
         """
         Send one or more EmailMessage objects and return the number of email
         messages sent.
@@ -111,21 +118,21 @@ class EmailBackend(BaseEmailBackend):
         if not email_messages:
             return 0
         with self._lock:
-            new_conn_created = self.open()
+            new_conn_created = await self.open()
             if not self.connection or new_conn_created is None:
                 # We failed silently on open().
                 # Trying to send would be pointless.
                 return 0
             num_sent = 0
             for message in email_messages:
-                sent = self._send(message)
+                sent = await self._send(message)
                 if sent:
                     num_sent += 1
             if new_conn_created:
-                self.close()
+                await self.close()
         return num_sent
 
-    def _send(self, email_message):
+    async def _send(self, email_message):
         """A helper method that does the actual sending."""
         if not email_message.recipients():
             return False
@@ -134,8 +141,8 @@ class EmailBackend(BaseEmailBackend):
         recipients = [sanitize_address(addr, encoding) for addr in email_message.recipients()]
         message = email_message.message()
         try:
-            self.connection.sendmail(from_email, recipients, message.as_bytes(linesep='\r\n'))
-        except smtplib.SMTPException:
+            await self.connection.sendmail(from_email, recipients, message.as_bytes(linesep='\r\n'))
+        except aiosmtplib.SMTPException:
             if not self.fail_silently:
                 raise
             return False

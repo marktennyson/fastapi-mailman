@@ -1,4 +1,4 @@
-* Flask-Mailman version:
+* Fastapi-Mailman version:
 * Python version:
 * Operating System:
 

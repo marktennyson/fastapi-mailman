@@ -1,7 +1,8 @@
-site_name: Flask-Mailman
-site_url: https://waynerv.github.io/flask-mailman
-repo_url: https://github.com/waynerv/flask-mailman
-repo_name: waynerv/flask-mailman
+site_name: Fastapi-Mailman
+site_url: https://marktennyson.github.io/fastapi-mailman
+repo_url: https://github.com/marktennyson/fastapi-mailman
+repo_name: marktennyson/fastapi-mailman
+dev_addr: localhost:8080
 nav:
   - Tutorial: index.md
   - Contributing: contributing.md
@@ -29,4 +30,4 @@ plugins:
       lang: en
   - mkdocstrings:
       watch:
-        - flask-mailman
+        - fastapi_mailman

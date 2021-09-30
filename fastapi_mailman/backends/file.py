@@ -3,7 +3,7 @@
 import datetime
 import os
 
-from flask_mailman.backends.console import EmailBackend as ConsoleEmailBackend
+from fastapi_mailman.backends.console import EmailBackend as ConsoleEmailBackend
 
 
 class ImproperlyConfigured(Exception):

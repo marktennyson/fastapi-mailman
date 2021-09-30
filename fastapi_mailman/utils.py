@@ -21,7 +21,7 @@ class CachedDnsName:
 DNS_NAME = CachedDnsName()
 
 
-class FlaskUnicodeDecodeError(UnicodeDecodeError):
+class FastapiUnicodeDecodeError(UnicodeDecodeError):
     def __init__(self, obj, *args):
         self.obj = obj
         super().__init__(*args)
@@ -68,7 +68,7 @@ def force_str(s, encoding='utf-8', strings_only=False, errors='strict'):
         else:
             s = str(s)
     except UnicodeDecodeError as e:
-        raise FlaskUnicodeDecodeError(s, *e.args)
+        raise FastapiUnicodeDecodeError(s, *e.args)
     return s
 
 
