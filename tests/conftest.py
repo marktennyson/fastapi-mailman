@@ -3,8 +3,6 @@ from fastapi_mailman import Mail
 from fastapi_mailman.config import ConnectionConfig
 
 import pytest as pt
-import typing as t
-
 
 @pt.fixture
 def app() -> "FastAPI":
@@ -14,14 +12,14 @@ def app() -> "FastAPI":
 @pt.fixture
 def config() -> "ConnectionConfig":
     config = ConnectionConfig(
-    MAIL_USERNAME = 'aioflask@gmail.com',
-    MAIL_PASSWORD = "kuvlcaajlwmqeurk",
+    MAIL_USERNAME = 'example@domain.com',
+    MAIL_PASSWORD = "7655tgrf443%$",
     MAIL_BACKEND =  'smtp',
     MAIL_SERVER =  'smtp.gmail.com',
     MAIL_PORT = 587,
     MAIL_USE_TLS = True,
     MAIL_USE_SSL = False,
-    MAIL_DEFAULT_SENDER = 'info@acqude.com',
+    MAIL_DEFAULT_SENDER = 'example@domain.com',
     )
     return config
 
@@ -29,6 +27,7 @@ def config() -> "ConnectionConfig":
 def mail(config:"ConnectionConfig") -> "Mail":
     
     mail = Mail(config)
+    mail.backend = "locmem"
     return mail
 
 @pt.fixture(autouse=True)

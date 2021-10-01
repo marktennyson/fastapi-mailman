@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import FastAPI
-# import uvicorn as uv
+import uvicorn as uv
 from fastapi_mailman import Mail, EmailMessage
 from fastapi_mailman.config import ConnectionConfig
 
@@ -31,5 +31,5 @@ async def read_root():
 def read_item(item_id: int, q: Optional[str] = None):
     return {"item_id": item_id, "q": q}
 
-# if __name__ == "__main__":
-#     uv.run(app, port=8082, debug=True)
+if __name__ == "__main__":
+    uv.run(app, port=8082, debug=True)

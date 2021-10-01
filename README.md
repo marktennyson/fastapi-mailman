@@ -16,4 +16,8 @@ Fastapi-Mail ported Django's email implementation to your Fastapi applications, 
 
 The way of using this extension is almost the same as Django.
 
-Documentation: https://marktennyson.github.io/fastapi-mailman.
+Documentation: [https://marktennyson.github.io/fastapi-mailman.](https://marktennyson.github.io/fastapi-mailman)
+
+## Basic Example
+```python
+```

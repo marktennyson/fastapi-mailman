@@ -112,6 +112,9 @@ class _MailMixin(object):
         Both fail_silently and other keyword arguments are used in the
         constructor of the backend.
         """
+        if MAILMAN is None:
+                raise NotImplementedError("Default Mail object isn't created yet.")
+
         try:
             backend = backend or MAILMAN.backend
 
@@ -145,6 +148,9 @@ class _MailMixin(object):
         If auth_user is None, use the MAIL_USERNAME setting.
         If auth_password is None, use the MAIL_PASSWORD setting.
         """
+        if MAILMAN is None:
+                raise NotImplementedError("Default Mail object isn't created yet.")
+
         connection = connection or self.get_connection(
             username=auth_user,
             password=auth_password,
@@ -169,7 +175,10 @@ class _MailMixin(object):
         Note: The API for this method is frozen. New code wanting to extend the
         functionality should use the EmailMessage class directly.
         """
-        connection = connection or await self.get_connection(
+        if MAILMAN is None:
+                raise NotImplementedError("Default Mail object isn't created yet.")
+                
+        connection = connection or self.get_connection(
             username=auth_user,
             password=auth_password,
             fail_silently=fail_silently,
