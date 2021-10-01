@@ -1,5 +1,5 @@
 # Fastapi-Mailman
-
+### Porting Django's email implementation to your FastAPI applications.
 ![PyPI](https://img.shields.io/pypi/v/fastapi-mailman?color=blue)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/fastapi-mailman?color=brightgreen)
 [![dev workflow](https://github.com/marktennyson/fastapi-mailman/actions/workflows/dev.yml/badge.svg?branch=master)](https://github.com/marktennyson/fastapi-mailman/actions/workflows/dev.yml)
@@ -9,6 +9,13 @@
 Fastapi-Mailman is a Fastapi extension providing simple email sending capabilities. It's actually a hard fork of `waynerv's` `flask-mailman` module. I have tried to implement the same features for the `Fastapi` too.
 
 It was meant to replace the basic Fastapi-Mail with a better warranty and more features.
+
+## Key Features:
+1. Easy to use. 
+2. Backend based email sender.
+3. Customisable backend class. 
+4. Proper testcases. 
+5. Proper documentation.
 
 ## Usage
 
@@ -20,4 +27,38 @@ Documentation: [https://marktennyson.github.io/fastapi-mailman.](https://markten
 
 ## Basic Example
 ```python
+from fastapi import FastAPI
+import uvicorn as uv
+from fastapi_mailman import Mail, EmailMessage
+from fastapi_mailman.config import ConnectionConfig
+
+app = FastAPI(debug=True)
+
+config = config = ConnectionConfig(
+    MAIL_USERNAME = 'example@domain.com',
+    MAIL_PASSWORD = "7655tgrf443%$",
+    MAIL_BACKEND =  'smtp',
+    MAIL_SERVER =  'smtp.gmail.com',
+    MAIL_PORT = 587,
+    MAIL_USE_TLS = True,
+    MAIL_USE_SSL = False,
+    MAIL_DEFAULT_SENDER = 'example@domain.com',
+    )
+mail = Mail(config)
+
+@app.get("/send-base")
+async def send_base():
+    msg = EmailMessage(mail, 'this is subject', 'this is message', to=['aniketsarkar@yahoo.com'])
+    await msg.send()
+    # await mail.send_mail("this is subject", "this is message", None, ["aniketsarkar@yahoo.com"])
+    return {"Hello": "World"}
+
+@app.get("/send-mail")
+async def check_send_mail():
+    await mail.send_mail("this is subject", "this is message", None, ["aniketsarkar@yahoo.com"])
+    return {"Hello": "World"}
+
+
+if __name__ == "__main__":
+    uv.run(app, port=8082, debug=True)
 ```

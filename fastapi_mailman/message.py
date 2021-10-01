@@ -288,7 +288,7 @@ class EmailMessage:
         """
         return [email for email in (self.to + self.cc + self.bcc) if email]
 
-    async def send(self, fail_silently=False):
+    async def send(self, fail_silently:bool=False):
         """Send the email message."""
         if not self.recipients():
             # Don't bother creating the network connection if there's nobody to

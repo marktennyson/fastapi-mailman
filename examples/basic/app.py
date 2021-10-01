@@ -7,16 +7,16 @@ from fastapi_mailman.config import ConnectionConfig
 
 app = FastAPI(debug=True)
 
-config = ConnectionConfig(
-    MAIL_USERNAME = 'aioflask@gmail.com',
-    MAIL_PASSWORD = "kuvlcaajlwmqeurk",
+config = config = ConnectionConfig(
+    MAIL_USERNAME = 'example@domain.com',
+    MAIL_PASSWORD = "7655tgrf443%$",
     MAIL_BACKEND =  'smtp',
     MAIL_SERVER =  'smtp.gmail.com',
     MAIL_PORT = 587,
     MAIL_USE_TLS = True,
     MAIL_USE_SSL = False,
-    MAIL_DEFAULT_SENDER = 'info@acqude.com',
-)
+    MAIL_DEFAULT_SENDER = 'example@domain.com',
+    )
 mail = Mail(config)
 
 @app.get("/")

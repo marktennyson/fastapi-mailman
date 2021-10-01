@@ -4,6 +4,7 @@ Tools for sending email.
 from importlib import import_module
 
 from fastapi_mailman.utils import DNS_NAME, CachedDnsName
+from pydantic import EmailStr
 
 from .message import (
     DEFAULT_ATTACHMENT_MIME_TYPE,
@@ -131,16 +132,16 @@ class _MailMixin(object):
 
     async def send_mail(
         self,
-        subject,
-        message,
-        from_email=None,
-        recipient_list=None,
-        fail_silently=False,
-        auth_user=None,
-        auth_password=None,
-        connection=None,
-        html_message=None,
-    ):
+        subject:str,
+        message:str,
+        from_email:t.Optional[EmailStr]=None,
+        recipient_list:t.Optional[t.List[EmailStr]]=None,
+        fail_silently:bool=False,
+        auth_user:t.Optional[str]=None,
+        auth_password:t.Optional[str]=None,
+        connection:t.Optional["BaseEmailBackend"]=None,
+        html_message:t.Optional[str]=None,
+    ) -> t.Coroutine[int]:
         """
         Easy wrapper for sending a single message to a recipient list. All members
         of the recipient list will see the other recipients in the 'To' field.
@@ -162,7 +163,14 @@ class _MailMixin(object):
 
         return await mail.send()
 
-    async def send_mass_mail(self, datatuple, fail_silently=False, auth_user=None, auth_password=None, connection=None):
+    async def send_mass_mail(
+        self, 
+        datatuple:t.Tuple[str, str, str, t.List[EmailStr]], 
+        fail_silently:bool=False, 
+        auth_user:t.Optional[str]=None, 
+        auth_password:t.Optional[str]=None, 
+        connection:"BaseEmailBackend"=None
+        ) -> t.Coroutine[int]:
         """
         Given a datatuple of (subject, message, from_email, recipient_list), send
         each message to each recipient list. Return the number of emails sent.
@@ -177,7 +185,7 @@ class _MailMixin(object):
         """
         if MAILMAN is None:
                 raise NotImplementedError("Default Mail object isn't created yet.")
-                
+
         connection = connection or self.get_connection(
             username=auth_user,
             password=auth_password,
@@ -201,7 +209,7 @@ class Mail(_MailMixin):
         self.state = self.initIns()
 
 
-    def init_mail(self, config:"ConnectionConfig"):
+    def init_mail(self, config:"ConnectionConfig") -> "Mail":
         config_dict = config.dict()
         self.server = config_dict.get('MAIL_SERVER')
         self.port = config_dict.get('MAIL_PORT')
@@ -219,11 +227,8 @@ class Mail(_MailMixin):
         self.backend = config_dict.get('MAIL_BACKEND')
         return self
 
-    def initIns(self):
-        state = self.init_mail(self.config)
+    def initIns(self) -> "Mail":
+        state:"Mail" = self.init_mail(self.config)
         global MAILMAN
         MAILMAN = state
         return state
-
-    # def __getattr__(self, name):
-    #     return getattr(self.state, name)
