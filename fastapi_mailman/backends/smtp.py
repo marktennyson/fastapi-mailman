@@ -110,7 +110,7 @@ class EmailBackend(BaseEmailBackend):
         finally:
             self.connection = None
 
-    async def send_messages(self, email_messages):
+    async def send_messages(self, email_messages) -> int:
         """
         Send one or more EmailMessage objects and return the number of email
         messages sent.

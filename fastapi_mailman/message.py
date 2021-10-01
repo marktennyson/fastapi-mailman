@@ -14,6 +14,8 @@ from email.utils import formataddr, formatdate, getaddresses, make_msgid
 from io import BytesIO, StringIO
 from pathlib import Path
 
+from pydantic.networks import EmailStr
+
 from fastapi_mailman.utils import DNS_NAME, force_str, punycode
 
 import typing as t
@@ -191,16 +193,16 @@ class EmailMessage:
     def __init__(
         self,
         mailman:"Mailman",
-        subject='',
-        body='',
-        from_email=None,
-        to=None,
-        bcc=None,
-        connection=None,
-        attachments=None,
-        headers=None,
-        cc=None,
-        reply_to=None,
+        subject:str='',
+        body:str='',
+        from_email:t.Optional[EmailStr]=None,
+        to:t.Optional[t.List[EmailStr]]=None,
+        bcc:t.Optional[t.List[EmailStr]]=None,
+        connection:t.Type["BaseEmailBackend"]=None,
+        attachments:t.Tuple[MIMEBase]=None,
+        headers:t.Optional[t.Dict[str, t.Any]]=None,
+        cc:t.Optional[t.List[EmailStr]]=None,
+        reply_to:t.Optional[EmailStr]=None,
     ):
         """
         Initialize a single email message (which can be sent to multiple

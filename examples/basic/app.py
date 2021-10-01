@@ -22,8 +22,8 @@ mail = Mail(config)
 @app.get("/")
 async def read_root():
     msg = EmailMessage(mail, 'this is subject', 'this is message', to=['aniketsarkar@yahoo.com'])
-    # await msg.send()
-    await mail.send_mail("this is subject", "this is message", None, ["aniketsarkar@yahoo.com"])
+    await msg.send()
+    # await mail.send_mail("this is subject", "this is message", None, ["aniketsarkar@yahoo.com"])
     return {"Hello": "World"}
 
 

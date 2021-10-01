@@ -1,8 +1,10 @@
-from tests import TestCase
 
+import typing as t
 
-class TestInitialization(TestCase):
-    def test_init_mail(self):
-        mail = self.mail.init_mail(self.app.config, self.app.testing)
+if t.TYPE_CHECKING:
+    from fastapi_mailman import Mail
 
-        self.assertEqual(self.mail.state.__dict__, mail.__dict__)
+def test_init_mail(mail:"Mail", config):
+    new_mail = mail.init_mail(config)
+
+    assert mail.state.__dict__ ==  new_mail.__dict__

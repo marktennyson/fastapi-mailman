@@ -22,20 +22,20 @@ class EmailBackend(BaseEmailBackend):
         self.stream.write('-' * 79)
         self.stream.write('\n')
 
-    def send_messages(self, email_messages):
+    async def send_messages(self, email_messages):
         """Write all messages to the stream in a thread-safe way."""
         if not email_messages:
             return
         msg_count = 0
         with self._lock:
             try:
-                stream_created = self.open()
+                stream_created = await self.open()
                 for message in email_messages:
                     self.write_message(message)
                     self.stream.flush()  # flush after each message
                     msg_count += 1
                 if stream_created:
-                    self.close()
+                    await self.close()
             except Exception:
                 if not self.fail_silently:
                     raise

@@ -104,7 +104,7 @@ class _MailMixin(object):
 
         return backend
 
-    def get_connection(self, backend=None, fail_silently=False, **kwds):
+    def get_connection(self, backend=None, fail_silently=False, **kwds) -> "BaseEmailBackend":
         """Load an email backend and return an instance of it.
 
         If backend is None (default), use app.config.MAIL_BACKEND.
@@ -115,7 +115,7 @@ class _MailMixin(object):
         try:
             backend = backend or MAILMAN.backend
 
-            klass = self.import_backend(backend)
+            klass:"BaseEmailBackend" = self.import_backend(backend)
 
         except ImportError:
             err_msg = (
@@ -181,42 +181,6 @@ class _MailMixin(object):
         return await connection.send_messages(messages)
 
 
-class _Mail(_MailMixin):
-    """Initialize a state instance with all configs and methods"""
-
-    def __init__(
-        self,
-        server,
-        port,
-        username,
-        password,
-        use_tls,
-        use_ssl,
-        default_sender,
-        timeout,
-        ssl_keyfile,
-        ssl_certfile,
-        use_localtime,
-        file_path,
-        default_charset,
-        backend,
-    ):
-        self.server = server
-        self.port = port
-        self.username = username
-        self.password = password
-        self.use_tls = use_tls
-        self.use_ssl = use_ssl
-        self.default_sender = default_sender
-        self.timeout = timeout
-        self.ssl_keyfile = ssl_keyfile
-        self.ssl_certfile = ssl_certfile
-        self.use_localtime = use_localtime
-        self.file_path = file_path
-        self.default_charset = default_charset
-        self.backend = backend
-
-
 class Mail(_MailMixin):
     """Manages email messaging
 
@@ -230,23 +194,21 @@ class Mail(_MailMixin):
 
     def init_mail(self, config:"ConnectionConfig"):
         config_dict = config.dict()
-
-        return _Mail(
-            config_dict.get('MAIL_SERVER'),
-            config_dict.get('MAIL_PORT'),
-            config_dict.get('MAIL_USERNAME'),
-            config_dict.get('MAIL_PASSWORD'),
-            config_dict.get('MAIL_USE_TLS'),
-            config_dict.get('MAIL_USE_SSL'),
-            config_dict.get('MAIL_DEFAULT_SENDER'),
-            config_dict.get('MAIL_TIMEOUT'),
-            config_dict.get('MAIL_SSL_KEYFILE'),
-            config_dict.get('MAIL_SSL_CERTFILE'),
-            config_dict.get('MAIL_USE_LOCALTIME'),
-            config_dict.get('MAIL_FILE_PATH'),
-            config_dict.get('MAIL_DEFAULT_CHARSET'),
-            config_dict.get('MAIL_BACKEND'),
-        )
+        self.server = config_dict.get('MAIL_SERVER')
+        self.port = config_dict.get('MAIL_PORT')
+        self.username = config_dict.get('MAIL_USERNAME')
+        self.password = config_dict.get('MAIL_PASSWORD')
+        self.use_tls = config_dict.get('MAIL_USE_TLS')
+        self.use_ssl = config_dict.get('MAIL_USE_SSL')
+        self.default_sender = config_dict.get('MAIL_DEFAULT_SENDER')
+        self.timeout = config_dict.get('MAIL_TIMEOUT')
+        self.ssl_keyfile = config_dict.get('MAIL_SSL_KEYFILE')
+        self.ssl_certfile = config_dict.get('MAIL_SSL_CERTFILE')
+        self.use_localtime = config_dict.get('MAIL_USE_LOCALTIME')
+        self.file_path = config_dict.get('MAIL_FILE_PATH')
+        self.default_charset = config_dict.get('MAIL_DEFAULT_CHARSET')
+        self.backend = config_dict.get('MAIL_BACKEND')
+        return self
 
     def initIns(self):
         state = self.init_mail(self.config)
@@ -254,5 +216,5 @@ class Mail(_MailMixin):
         MAILMAN = state
         return state
 
-    def __getattr__(self, name):
-        return getattr(self.state, name)
+    # def __getattr__(self, name):
+    #     return getattr(self.state, name)

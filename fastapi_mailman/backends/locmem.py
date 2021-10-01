@@ -19,7 +19,7 @@ class EmailBackend(BaseEmailBackend):
         if not hasattr(self.mailman, 'outbox'):
             self.mailman.outbox = []
 
-    def send_messages(self, messages):
+    async def send_messages(self, messages):
         """Redirect messages to the dummy outbox"""
         msg_count = 0
         for message in messages:  # .message() triggers header validation
