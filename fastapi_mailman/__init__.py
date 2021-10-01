@@ -141,7 +141,7 @@ class _MailMixin(object):
         auth_password:t.Optional[str]=None,
         connection:t.Optional["BaseEmailBackend"]=None,
         html_message:t.Optional[str]=None,
-    ) -> t.Coroutine[int]:
+    ) -> t.Coroutine:
         """
         Easy wrapper for sending a single message to a recipient list. All members
         of the recipient list will see the other recipients in the 'To' field.
@@ -170,7 +170,7 @@ class _MailMixin(object):
         auth_user:t.Optional[str]=None, 
         auth_password:t.Optional[str]=None, 
         connection:"BaseEmailBackend"=None
-        ) -> t.Coroutine[int]:
+        ) -> t.Coroutine:
         """
         Given a datatuple of (subject, message, from_email, recipient_list), send
         each message to each recipient list. Return the number of emails sent.
