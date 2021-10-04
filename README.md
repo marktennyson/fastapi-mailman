@@ -48,9 +48,8 @@ mail = Mail(config)
 
 @app.get("/send-base")
 async def send_base():
-    msg = EmailMessage(mail, 'this is subject', 'this is message', to=['aniketsarkar@yahoo.com'])
+    msg = EmailMessage('this is subject', 'this is message', to=['aniketsarkar@yahoo.com'])
     await msg.send()
-    # await mail.send_mail("this is subject", "this is message", None, ["aniketsarkar@yahoo.com"])
     return {"Hello": "World"}
 
 @app.get("/send-mail")
@@ -62,3 +61,27 @@ async def check_send_mail():
 if __name__ == "__main__":
     uv.run(app, port=8082, debug=True)
 ```
+## Development
+
+#### Contribution procedure.
+1. Create a new issue on github.
+2. Fork and clone this repository.
+3. Make some changes as required.
+4. Write unit test to showcase its functionality.
+5. Submit a pull request under `main` branch.
+
+#### Run this project on your local machine.
+To run this project on your local machine please [click here](https://marktennyson.github.io/fastapi-mailman/Contributing)
+
+### Contributors
+Credits goes to these peoples:
+
+<a href="https://github.com/marktennyson/fastapi-mailman/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=marktennyson/fastapi-mailman" />
+</a>
+
+# License
+
+GNU General Public License v3 or later (GPLv3+)
+
+Copyright (c) 2021 navycut(aniketsarkar@yahoo.com)

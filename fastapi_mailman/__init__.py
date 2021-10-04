@@ -24,7 +24,7 @@ if t.TYPE_CHECKING:
     from .config import ConnectionConfig
     Mailman =t.TypeVar("Mailman", bound="Mail")
 
-MAILMAN:t.Optional["Mailman"] = None
+from . import globals
 
 __all__ = [
     'CachedDnsName',
@@ -113,11 +113,11 @@ class _MailMixin(object):
         Both fail_silently and other keyword arguments are used in the
         constructor of the backend.
         """
-        if MAILMAN is None:
+        if globals.MAILMAN is None:
                 raise NotImplementedError("Default Mail object isn't created yet.")
 
         try:
-            backend = backend or MAILMAN.backend
+            backend = backend or globals.MAILMAN.backend
 
             klass:"BaseEmailBackend" = self.import_backend(backend)
 
@@ -128,7 +128,7 @@ class _MailMixin(object):
             )
             raise RuntimeError(err_msg)
 
-        return klass(mailman=MAILMAN, fail_silently=fail_silently, **kwds)
+        return klass(mailman=globals.MAILMAN, fail_silently=fail_silently, **kwds)
 
     async def send_mail(
         self,
@@ -149,7 +149,7 @@ class _MailMixin(object):
         If auth_user is None, use the MAIL_USERNAME setting.
         If auth_password is None, use the MAIL_PASSWORD setting.
         """
-        if MAILMAN is None:
+        if globals.MAILMAN is None:
                 raise NotImplementedError("Default Mail object isn't created yet.")
 
         connection = connection or self.get_connection(
@@ -157,7 +157,7 @@ class _MailMixin(object):
             password=auth_password,
             fail_silently=fail_silently,
         )
-        mail = EmailMultiAlternatives(MAILMAN, subject, message, from_email, recipient_list, connection=connection)
+        mail = EmailMultiAlternatives(subject, message, from_email, recipient_list, connection=connection, mailman=globals.MAILMAN)
         if html_message:
             mail.attach_alternative(html_message, 'text/html')
 
@@ -183,7 +183,7 @@ class _MailMixin(object):
         Note: The API for this method is frozen. New code wanting to extend the
         functionality should use the EmailMessage class directly.
         """
-        if MAILMAN is None:
+        if globals.MAILMAN is None:
                 raise NotImplementedError("Default Mail object isn't created yet.")
 
         connection = connection or self.get_connection(
@@ -192,7 +192,7 @@ class _MailMixin(object):
             fail_silently=fail_silently,
         )
         messages = [
-            EmailMessage(MAILMAN, subject, message, sender, recipient, connection=connection)
+            EmailMessage(subject, message, sender, recipient, connection=connection, mailman=globals.MAILMAN)
             for subject, message, sender, recipient in datatuple
         ]
         return await connection.send_messages(messages)
@@ -211,6 +211,7 @@ class Mail(_MailMixin):
 
     def init_mail(self, config:"ConnectionConfig") -> "Mail":
         config_dict = config.dict()
+
         self.server = config_dict.get('MAIL_SERVER')
         self.port = config_dict.get('MAIL_PORT')
         self.username = config_dict.get('MAIL_USERNAME')
@@ -229,6 +230,6 @@ class Mail(_MailMixin):
 
     def initIns(self) -> "Mail":
         state:"Mail" = self.init_mail(self.config)
-        global MAILMAN
-        MAILMAN = state
+        # global MAILMAN
+        globals.MAILMAN = state
         return state

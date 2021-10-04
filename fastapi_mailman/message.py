@@ -17,6 +17,7 @@ from pathlib import Path
 from pydantic.networks import EmailStr
 
 from fastapi_mailman.utils import DNS_NAME, force_str, punycode
+from fastapi_mailman import globals
 
 import typing as t
 
@@ -192,48 +193,52 @@ class EmailMessage:
 
     def __init__(
         self,
-        mailman:"Mailman",
         subject:str='',
         body:str='',
         from_email:t.Optional[EmailStr]=None,
         to:t.Optional[t.List[EmailStr]]=None,
+        cc:t.Optional[t.List[EmailStr]]=None,
         bcc:t.Optional[t.List[EmailStr]]=None,
-        connection:t.Type["BaseEmailBackend"]=None,
+        reply_to:t.Optional[EmailStr]=None,
         attachments:t.Tuple[MIMEBase]=None,
         headers:t.Optional[t.Dict[str, t.Any]]=None,
-        cc:t.Optional[t.List[EmailStr]]=None,
-        reply_to:t.Optional[EmailStr]=None,
+        connection:t.Type["BaseEmailBackend"]=None,
+        mailman:t.Optional["Mailman"]=None
     ):
         """
         Initialize a single email message (which can be sent to multiple
         recipients).
         """
-        self.mailman = mailman
+        self.mailman = mailman or globals.MAILMAN
+
+        if self.mailman is None:
+            raise NotImplementedError("Default Mail object isn't created yet.")
+
         if to:
-            if isinstance(to, str):
+            if not isinstance(to, (list, tuple)) is True:
                 raise TypeError('"to" argument must be a list or tuple')
             self.to = list(to)
         else:
             self.to = []
         if cc:
-            if isinstance(cc, str):
+            if not isinstance(cc, (list, tuple)) is True:
                 raise TypeError('"cc" argument must be a list or tuple')
             self.cc = list(cc)
         else:
             self.cc = []
         if bcc:
-            if isinstance(bcc, str):
+            if not isinstance(bcc, (tuple, list)) is True:
                 raise TypeError('"bcc" argument must be a list or tuple')
             self.bcc = list(bcc)
         else:
             self.bcc = []
         if reply_to:
-            if isinstance(reply_to, str):
+            if not isinstance(reply_to, (list, tuple)) is True:
                 raise TypeError('"reply_to" argument must be a list or tuple')
             self.reply_to = list(reply_to)
         else:
             self.reply_to = []
-        self.from_email = from_email or mailman.default_sender
+        self.from_email = from_email or self.mailman.default_sender
         self.subject = subject
         self.body = body or ''
         self.attachments = []
@@ -431,35 +436,35 @@ class EmailMultiAlternatives(EmailMessage):
 
     def __init__(
         self,
-        mailman:"Mailman",
-        subject='',
-        body='',
-        from_email=None,
-        to=None,
-        bcc=None,
-        connection=None,
-        attachments=None,
-        headers=None,
-        alternatives=None,
-        cc=None,
-        reply_to=None,
+        subject:str='',
+        body:str='',
+        from_email:t.Optional[EmailStr]=None,
+        to:t.Optional[t.List[EmailStr]]=None,
+        cc:t.Optional[t.List[EmailStr]]=None,
+        bcc:t.Optional[t.List[EmailStr]]=None,
+        reply_to:t.Optional[EmailStr]=None,
+        attachments:t.Tuple[MIMEBase]=None,
+        headers:t.Optional[t.Dict[str, t.Any]]=None,
+        alternatives:t.Optional[list] = None,
+        connection:t.Type["BaseEmailBackend"]=None,
+        mailman:t.Optional["Mailman"]=None
     ):
         """
         Initialize a single email message (which can be sent to multiple
         recipients).
         """
-        super().__init__(
-            mailman,
+        super(EmailMultiAlternatives, self).__init__(
             subject,
             body,
             from_email,
             to,
+            cc,
             bcc,
-            connection,
+            reply_to,
             attachments,
             headers,
-            cc,
-            reply_to,
+            connection,
+            mailman
         )
         self.alternatives = alternatives or []
 
