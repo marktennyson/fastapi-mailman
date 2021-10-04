@@ -1,4 +1,5 @@
 # Fastapi-Mailman
+<img src="https://raw.githubusercontent.com/marktennyson/fastapi-mailman/master/logos/fastapi_mailman_logo.png?token=ALCBDWVGKS42MM34S3WHU2TBLKT7Q"></img>
 ### Porting Django's email implementation to your FastAPI applications.
 ![PyPI](https://img.shields.io/pypi/v/fastapi-mailman?color=blue)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/fastapi-mailman?color=brightgreen)
@@ -80,7 +81,7 @@ Credits goes to these peoples:
   <img src="https://contrib.rocks/image?repo=marktennyson/fastapi-mailman" />
 </a>
 
-# License
+## License
 
 GNU General Public License v3 or later (GPLv3+)
 
