@@ -7,7 +7,7 @@ from fastapi_mailman.config import ConnectionConfig
 
 app = FastAPI(debug=True)
 
-config = config = ConnectionConfig(
+config = ConnectionConfig(
     MAIL_USERNAME = 'example@domain.com',
     MAIL_PASSWORD = "7655tgrf443%$",
     MAIL_BACKEND =  'smtp',

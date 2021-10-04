@@ -13,7 +13,7 @@ pip install Fastapi-Mailman
 
 ## Configuration
 
-Fastapi-Mailman is configured through the standard Flask config API. A list of configuration keys currently understood by the extension:
+Fastapi-Mailman is configured through the inbuild `ConnectionConfig` a `Pydantic` based class. A list of configuration attributes currently understood by the extension:
 
 - **MAIL_SERVER**: The host to use for sending email.
 
@@ -59,7 +59,7 @@ Fastapi-Mailman is configured through the standard Flask config API. A list of c
 
 - **MAIL_BACKEND**: The backend to use for sending emails.
 
-    Default: 'smtp'. In addition the standard Flask TESTING configuration option is used for testing. When `TESTING=True` and `MAIL_BACKEND` is not provided, default will be set to 'locmem'.
+    Default: 'smtp'. In addition the standard FastAPI TESTING configuration option is used for testing. When`MAIL_BACKEND` is not provided, default will be set to 'smtp'.
 
 - **MAIL_FILE_PATH**: The directory used by the file email backend to store output files.
 
@@ -69,27 +69,26 @@ Fastapi-Mailman is configured through the standard Flask config API. A list of c
 
     Default: False.
 
-Emails are managed through a *Mail* instance:
+Create a ConnectionConfig object to pass all the required config attributes:
 ```python
-from flask import Flask
-from fastapi_mailman import Mail
+from fastapi import FastAPI
+from fastapi_mailman.config import ConnectionConfig
 
-app = Flask(__name__)
-mail = Mail(app)
+config = ConnectionConfig(
+    MAIL_USERNAME = 'example@domain.com',
+    MAIL_PASSWORD = "7655tgrf443%$",
+    MAIL_BACKEND =  'smtp',
+    MAIL_SERVER =  'smtp.gmail.com',
+    MAIL_PORT = 587,
+    MAIL_USE_TLS = True,
+    MAIL_USE_SSL = False,
+    MAIL_DEFAULT_SENDER = 'example@domain.com',
+    )
+
+mail = Mail(mail)
 ```
 In this case all emails are sent using the configuration values of the application that was passed to the *Mail* class constructor.
 
-Alternatively you can set up your *Mail* instance later at configuration time, using the `init_app` method:
-```python
-from flask import Flask
-from fastapi_mailman import Mail
-
-mail = Mail()
-
-app = Flask(__name__)
-mail.init_app(app)
-```
-In this case emails will be sent using the configuration values from Flask’s `current_app` context global. This is useful if you have multiple applications running in the same process but with different configuration options.
 
 ## Sending messages
 
@@ -98,6 +97,7 @@ To send a message first create a `EmailMessage` instance:
 from fastapi_mailman import EmailMessage
 
 msg = EmailMessage(
+    mail,
     'Hello',
     'Body goes here',
     'from@example.com',
@@ -106,13 +106,14 @@ msg = EmailMessage(
     reply_to=['another@example.com'],
     headers={'Message-ID': 'foo'},
 )
-msg.send()
+await msg.send()
 ```
-Then send the message using `send()` method:
+Then send the message using asynchronous `send()` method:
 ```python hl_lines="12 13"
 from fastapi_mailman import EmailMessage
 
 msg = EmailMessage(
+    mail,
     'Hello',
     'Body goes here',
     'from@example.com',
@@ -121,12 +122,13 @@ msg = EmailMessage(
     reply_to=['another@example.com'],
     headers={'Message-ID': 'foo'},
 )
-msg.send()
+await msg.send()
 ```
 
 The `EmailMessage` class is initialized with the following parameters (in the given order, if positional arguments are used).
 All parameters are optional and can be set at any time prior to calling the `send()` method.
 
+- **mail**: The instance of the default `fastapi_mailman.Mail` class.
 - **subject**: The subject line of the email.
 - **body**: The body text. This should be a plain text message.
 - **from_email**: The sender’s address. Both `fred@example.com` or `"Fred" <fred@example.com>` forms are legal. If omitted, the MAIL_DEFAULT_SENDER config is used.
@@ -138,7 +140,7 @@ All parameters are optional and can be set at any time prior to calling the `sen
 - **cc**: A list or tuple of recipient addresses used in the “Cc” header when sending the email.
 - **reply_to**: A list or tuple of recipient addresses used in the “Reply-To” header when sending the email.
 
-`EmailMessage.send(fail_silently=False)` sends the message.
+`await EmailMessage.send(fail_silently=False)` sends the message.
 
 If a connection was specified when the email was constructed, that connection will be used. Otherwise, an instance of the default backend will be instantiated and used.
 
@@ -154,9 +156,9 @@ from fastapi_mailman import EmailMessage
 subject, from_email, to = 'hello', 'from@example.com', 'to@example.com'
 html_content = '<p>This is an <strong>important</strong> message.</p>'
 
-msg = EmailMessage(subject, html_content, from_email, [to])
+msg = EmailMessage(mail, subject, html_content, from_email, [to])
 msg.content_subtype = "html"  # Main content is now text/html
-msg.send()
+await msg.send()
 ```
 
 ### Sending multiple emails
@@ -170,15 +172,15 @@ Firstly, you can use the `send_messages()` method. `send_messages()` takes a lis
 For example, if you have a function called `get_notification_email()` that returns a list of `EmailMessage` objects representing some periodic email you wish to send out, you could send these emails using a single call to `send_messages`:
 
 ```python
-from flask import Flask
+from fastapi import FastAPI
 from fastapi_mailman import Mail
 
-app = Flask(__name__)
-mail = Mail(app)
+app = FastAPI()
+mail = Mail(config)
 
 connection = mail.get_connection()   # Use default email connection
 messages = get_notification_email()
-connection.send_messages(messages)
+await connection.send_messages(messages)
 ```
 
 In this example, the call to `send_messages()` opens a connection on the backend, sends the list of messages, and then closes the connection again.
@@ -186,26 +188,27 @@ In this example, the call to `send_messages()` opens a connection on the backend
 The second approach is to use the `open()` and `close()` methods on the email backend to manually control the connection. `send_messages()` will not manually open or close the connection if it is already open, so if you manually open the connection, you can control when it is closed. For example:
 
 ```python
-from flask import Flask
+from fastapi import FastAPI
 from fastapi_mailman import Mail, EmailMessage
 
-app = Flask(__name__)
-mail = Mail(app)
+app = FastAPI()
+mail = Mail(config)
 
 connection = mail.get_connection()
 
 # Manually open the connection
-connection.open()
+await connection.open()
 
 # Construct an email message that uses the connection
 email1 = EmailMessage(
+    mail,
     'Hello',
     'Body goes here',
     'from@example.com',
     ['to1@example.com'],
     connection=connection,
 )
-email1.send() # Send the email
+await email1.send() # Send the email
 
 # Construct two more messages
 email2 = EmailMessage(
@@ -222,30 +225,31 @@ email3 = EmailMessage(
 )
 
 # Send the two emails in a single call -
-connection.send_messages([email2, email3])
+await connection.send_messages([email2, email3])
 # The connection was already open so send_messages() doesn't close it.
 # We need to manually close the connection.
-connection.close()
+await connection.close()
 ```
 
 Of course there is always a short writing using `with`:
 
 ```python
-from flask import Flask
+from fastapi import FastAPI
 from fastapi_mailman import Mail, EmailMessage
 
-app = Flask(__name__)
-mail = Mail(app)
+app = FastAPI()
+mail = Mail(config)
 
-with mail.get_connection() as conn:
+async with mail.get_connection() as conn:
     email1 = EmailMessage(
+    mail,
     'Hello',
     'Body goes here',
     'from@example.com',
     ['to1@example.com'],
     connection=conn,
     )
-    email1.send()
+    await email1.send()
 
     email2 = EmailMessage(
         'Hello',
@@ -259,7 +263,7 @@ with mail.get_connection() as conn:
         'from@example.com',
         ['to3@example.com'],
     )
-    conn.send_messages([email2, email3])
+    await conn.send_messages([email2, email3])
 ```
 
 ## Attachments
@@ -312,9 +316,9 @@ from fastapi_mailman import EmailMultiAlternatives
 subject, from_email, to = 'hello', 'from@example.com', 'to@example.com'
 text_content = 'This is an important message.'
 html_content = '<p>This is an <strong>important</strong> message.</p>'
-msg = EmailMultiAlternatives(subject, text_content, from_email, [to])
+msg = EmailMultiAlternatives(mail, subject, text_content, from_email, [to])
 msg.attach_alternative(html_content, "text/html")
-msg.send()
+await msg.send()
 ```
 
 ## Email backends
@@ -330,21 +334,23 @@ The email backend class has the following methods:
 It can also be used as a context manager, which will automatically call `open()` and `close()` as needed:
 
 ```python
-from flask import Flask
+from fastapi import FastAPI
 from fastapi_mailman import Mail
 
-app = Flask(__name__)
-mail = Mail(app)
+app = FastAPI()
+mail = Mail(config)
 
-with mail.get_connection() as connection:
+async with mail.get_connection() as connection:
     mail.EmailMessage(
-        subject1, body1, from1, [to1],
+        mail, subject1, body1, from1, [to1],
         connection=connection,
-    ).send()
+    )
+    await mail.send()
     mail.EmailMessage(
-        subject2, body2, from2, [to2],
+        mail, subject2, body2, from2, [to2],
         connection=connection,
-    ).send()
+    )
+    await mail.send()
 ```
 
 ### Obtaining an instance of an email backend
@@ -437,7 +443,7 @@ MAIL_BACKEND = 'locmem'
 
 This backend is not intended for use in production – it is provided as a convenience that can be used during development and testing.
 
-When `TESTING=True` and `MAIL_BACKEND` is not provided, this backend will be used for testing.
+When `MAIL_BACKEND` is not provided, this backend will be used for testing.
 
 ### Dummy backend
 
@@ -461,16 +467,16 @@ MAIL_BACKEND = 'fastapi_mailman.backens.custom'
 A more direct way is to import your custom backend class, and pass it to `fastapi_mailman.get_connection` function:
 
 ```python
-from flask import Flask
+from fastapi import FastAPI
 from fastapi_mailman import Mail
 
 from your_custom_backend import CustomBackend
 
-app = Flask(__name__)
-mail = Mail(app)
+app = FastAPI()
+mail = Mail(config)
 
 connection = mail.get_connection(backend=CustomBackend)
-connection.send_messages(messages)
+await connection.send_messages(messages)
 ```
 
 Custom email backends should subclass `BaseEmailBackend` that is located in the `fastapi_mailman.backends.base` module.
@@ -519,15 +525,15 @@ Each separate element of datatuple results in a separate email message. As in `s
 For example, the following code would send two different messages to two different sets of recipients; however, only one connection to the mail server would be opened:
 
 ```python
-from flask import Flask
+from fastapi import FastAPI
 from fastapi_mailman import Mail
 
-app = Flask(__name__)
-mail = Mail(app)
+app = FastAPI()
+mail = Mail(config)
 
 message1 = ('Subject here', 'Here is the message', 'from@example.com', ['first@example.com', 'other@example.com'])
 message2 = ('Another Subject', 'Here is another message', 'from@example.com', ['second@test.com'])
-mail.send_mass_mail((message1, message2), fail_silently=False)
+await mail.send_mass_mail((message1, message2), fail_silently=False)
 # The return value will be the number of successfully delivered messages.
 ```
 
