@@ -5,7 +5,7 @@
 ![PyPI](https://img.shields.io/pypi/v/fastapi-mailman?color=blue)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/fastapi-mailman?color=brightgreen)
 [![dev workflow](https://github.com/marktennyson/fastapi-mailman/actions/workflows/dev.yml/badge.svg?branch=master)](https://github.com/marktennyson/fastapi-mailman/actions/workflows/dev.yml)
-![GitHub commits since latest release (by SemVer)](https://img.shields.io/github/commits-since/waynerv/fastapi-mailman/latest?color=cyan)
+![GitHub commits since latest release (by SemVer)](https://img.shields.io/github/commits-since/marktennyson/fastapi-mailman/latest?color=cyan)
 ![PyPI - License](https://img.shields.io/pypi/l/fastapi-mailman?color=blue)
 
 Fastapi-Mailman is a Fastapi extension providing simple email sending capabilities. It's actually a hard fork of `waynerv's` `flask-mailman` module. I have tried to implement the same features for the `Fastapi` too.
