@@ -26,7 +26,7 @@ It was meant to replace the basic Fastapi-Mail with a better warranty and more f
 
 ## 💯 Usage
 
-Fastapi-Mail ported Django's email implementation to your Fastapi applications, which may be the best mail sending implementation that's available for python.
+Fastapi-Mailman ported Django's email implementation to your Fastapi applications, which may be the best mail sending implementation that's available for python.
 
 The way of using this extension is almost the same as Django.
 
