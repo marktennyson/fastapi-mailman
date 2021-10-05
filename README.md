@@ -1,7 +1,7 @@
-# Fastapi-Mailman
+# 📬 Fastapi-Mailman
 <img src="https://raw.githubusercontent.com/marktennyson/fastapi-mailman/master/logos/fastapi_mailman_logo.png"></img>
 
-### Porting Django's email implementation to your FastAPI applications.
+### 🔥 Porting Django's email implementation to your FastAPI applications.
 ![PyPI](https://img.shields.io/pypi/v/fastapi-mailman?color=blue)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/fastapi-mailman?color=brightgreen)
 [![dev workflow](https://github.com/marktennyson/fastapi-mailman/actions/workflows/dev.yml/badge.svg?branch=master)](https://github.com/marktennyson/fastapi-mailman/actions/workflows/dev.yml)
@@ -12,14 +12,19 @@ Fastapi-Mailman is a Fastapi extension providing simple email sending capabiliti
 
 It was meant to replace the basic Fastapi-Mail with a better warranty and more features.
 
-## Key Features:
+## ⛲ Key Features:
 1. Easy to use. 
 2. Backend based email sender.
 3. Customisable backend class. 
 4. Proper testcases. 
 5. Proper documentation.
 
-## Usage
+## 🔗 Important Links:
+[Github Repo](https://github.com/marktennyson/fastapi-mailman)    
+[PYPI](https://pypi.org/project/fastapi-mailman)    
+[Documentation](https://marktennyson.github.io/fastapi-mailman)    
+
+## 💯 Usage
 
 Fastapi-Mail ported Django's email implementation to your Fastapi applications, which may be the best mail sending implementation that's available for python.
 
@@ -27,7 +32,7 @@ The way of using this extension is almost the same as Django.
 
 Documentation: [https://marktennyson.github.io/fastapi-mailman.](https://marktennyson.github.io/fastapi-mailman)
 
-## Basic Example
+## 🪜 Basic Example
 ```python
 from fastapi import FastAPI
 import uvicorn as uv
@@ -63,26 +68,26 @@ async def check_send_mail():
 if __name__ == "__main__":
     uv.run(app, port=8082, debug=True)
 ```
-## Development
+## 🚇 Development
 
-#### Contribution procedure.
+#### 🧑‍💻 Contribution procedure.
 1. Create a new issue on github.
 2. Fork and clone this repository.
 3. Make some changes as required.
 4. Write unit test to showcase its functionality.
 5. Submit a pull request under the `master` branch.
 
-#### Run this project on your local machine.
+#### 🖨️ Run this project on your local machine.
 To run this project on your local machine please [click here](https://marktennyson.github.io/fastapi-mailman/Contributing)
 
-### Contributors
+### ❤️ Contributors
 Credits goes to these peoples:
 
 <a href="https://github.com/marktennyson/fastapi-mailman/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=marktennyson/fastapi-mailman" />
 </a>
 
-## License
+## 📝 License
 
 GNU General Public License v3 or later (GPLv3+)
 
