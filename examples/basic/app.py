@@ -20,7 +20,7 @@ config = ConnectionConfig(
     MAIL_USE_SSL = environ.get("MAIL_USE_SSL"),
     MAIL_DEFAULT_SENDER = environ.get("MAIL_DEFAULT_SENDER"),
     )
-mail = Mail(config)
+# mail = Mail(config)
 
 @app.get("/")
 async def read_root():

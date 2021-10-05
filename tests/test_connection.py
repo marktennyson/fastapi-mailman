@@ -9,7 +9,6 @@ if t.TYPE_CHECKING:
 async def test_send_message(mail:"Mail"):
     mail.backend = "locmem"
     msg = EmailMessage(
-        mail,
         subject="testing",
         to=["to@example.com"],
         body="testing",
@@ -23,7 +22,6 @@ async def test_send_message(mail:"Mail"):
 async def test_send_message_using_connection(mail:"Mail"):
     async with mail.get_connection() as conn:
         msg = EmailMessage(
-            mail,
             subject="testing",
             to=["to@example.com"],
             body="testing",
@@ -41,7 +39,6 @@ async def test_send_message_using_connection(mail:"Mail"):
 async def test_send_single(mail:"Mail"):
     async with mail.get_connection() as conn:
         msg = EmailMessage(
-            mail,
             subject="testing",
             to=["to@example.com"],
             body="testing",
@@ -60,7 +57,7 @@ async def test_send_many(mail:"Mail"):
     async with mail.get_connection() as conn:
         msgs = []
         for i in range(10):
-            msg = EmailMessage(mail, subject="testing", to=["to@example.com"], body="testing")
+            msg = EmailMessage(mailman=mail, subject="testing", to=["to@example.com"], body="testing")
             msgs.append(msg)
         await conn.send_messages(msgs)
         assert len(mail.outbox) == 10
@@ -70,7 +67,7 @@ async def test_send_many(mail:"Mail"):
 @pt.mark.anyio
 async def test_send_without_sender(mail:"Mail"):
     mail.default_sender = None
-    msg = EmailMessage(mail, subject="testing", to=["to@example.com"], body="testing")
+    msg = EmailMessage(mailman=mail, subject="testing", to=["to@example.com"], body="testing")
     await msg.send()
     assert len(mail.outbox) == 1
     sent_msg = mail.outbox[0]
@@ -78,11 +75,11 @@ async def test_send_without_sender(mail:"Mail"):
 
 @pt.mark.anyio
 async def test_send_without_to(mail:"Mail"):
-    msg = EmailMessage(mail, subject="testing", to=[], body="testing")
+    msg = EmailMessage(subject="testing", to=[], body="testing")
     assert await msg.send() == 0
 
 @pt.mark.anyio
 async def test_bad_header_subject(mail):
-    msg = EmailMessage(mail, subject="testing\n\r", body="testing", to=["to@example.com"])
+    msg = EmailMessage(subject="testing\n\r", body="testing", to=["to@example.com"])
     with pt.raises(BadHeaderError):
         await msg.send()

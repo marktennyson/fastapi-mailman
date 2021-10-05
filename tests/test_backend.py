@@ -14,7 +14,6 @@ if t.TYPE_CHECKING:
 async def test_console_backend(mail:"Mail", capsys:"pt.CaptureFixture"):
     mail.backend = 'console'
     msg = EmailMessage(
-        mail,
         subject="testing",
         to=["to@example.com"],
         body="testing",
@@ -30,7 +29,6 @@ async def test_console_backend(mail:"Mail", capsys:"pt.CaptureFixture"):
 async def test_dummy_backend(mail:"Mail"):
         mail.backend = 'dummy'
         msg = EmailMessage(
-            mail,
             subject="testing",
             to=["to@example.com"],
             body="testing",
@@ -44,7 +42,6 @@ async def test_file_backend(mail:"Mail"):
         mail.file_path = tempdir
         async with mail.get_connection() as conn:
             msg = EmailMessage(
-                mail,
                 subject="testing",
                 to=["to@example.com"],
                 body="testing",
@@ -60,7 +57,6 @@ async def test_file_backend(mail:"Mail"):
 async def test_locmem_backend(mail:"Mail"):
     mail.backend = 'locmem'
     msg = EmailMessage(
-        mail,
         subject="testing",
         to=["to@example.com"],
         body="testing",
@@ -78,7 +74,6 @@ async def test_locmem_backend(mail:"Mail"):
 async def test_smtp_backend(mail:"Mail"):
         mail.backend = 'smtp'
         msg = EmailMessage(
-            mail,
             subject="testing",
             to=["to@example.com"],
             body="testing",
@@ -92,7 +87,6 @@ async def test_smtp_backend(mail:"Mail"):
 async def test_invalid_backend(mail:"Mail"):
     mail.backend = 'unknown'
     msg = EmailMessage(
-        mail,
         subject="testing",
         to=["to@example.com"],
         body="testing",
@@ -106,7 +100,7 @@ async def test_invalid_backend(mail:"Mail"):
 async def test_override_custom_backend(mail:"Mail"):
     mail.backend = 'console'
     async with mail.get_connection(backend=locmem.EmailBackend) as conn:
-        msg = EmailMessage(mail, subject="testing", to=["to@example.com"], body="testing", connection=conn)
+        msg = EmailMessage(subject="testing", to=["to@example.com"], body="testing", connection=conn)
         await msg.send()
 
     assert len(mail.outbox) == 1
@@ -119,7 +113,6 @@ async def test_import_path_locmem_backend(mail:"Mail"):
         ["fastapi_mailman.backends.locmem", "fastapi_mailman.backends.locmem.EmailBackend"]):
             mail.backend = backend_path
             msg = EmailMessage(
-                mail,
                 subject="testing",
                 to=["to@example.com"],
                 body="testing",

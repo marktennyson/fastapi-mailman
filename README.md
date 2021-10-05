@@ -1,5 +1,6 @@
 # Fastapi-Mailman
-<img src="https://raw.githubusercontent.com/marktennyson/fastapi-mailman/master/logos/fastapi_mailman_logo.png?token=ALCBDWVGKS42MM34S3WHU2TBLKT7Q"></img>
+<img src="https://raw.githubusercontent.com/marktennyson/fastapi-mailman/master/logos/fastapi_mailman_logo.png"></img>
+
 ### Porting Django's email implementation to your FastAPI applications.
 ![PyPI](https://img.shields.io/pypi/v/fastapi-mailman?color=blue)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/fastapi-mailman?color=brightgreen)
@@ -69,7 +70,7 @@ if __name__ == "__main__":
 2. Fork and clone this repository.
 3. Make some changes as required.
 4. Write unit test to showcase its functionality.
-5. Submit a pull request under `main` branch.
+5. Submit a pull request under the `master` branch.
 
 #### Run this project on your local machine.
 To run this project on your local machine please [click here](https://marktennyson.github.io/fastapi-mailman/Contributing)
@@ -85,4 +86,4 @@ Credits goes to these peoples:
 
 GNU General Public License v3 or later (GPLv3+)
 
-Copyright (c) 2021 navycut(aniketsarkar@yahoo.com)
+Copyright (c) 2021 Aniket Sarkar(aniketsarkar@yahoo.com)
