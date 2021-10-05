@@ -1,5 +1,6 @@
-import pytest as pt
 import typing as t
+
+import pytest as pt
 
 if t.TYPE_CHECKING:
     from fastapi_mailman import Mail
@@ -7,7 +8,7 @@ if t.TYPE_CHECKING:
 
 
 @pt.mark.anyio
-async def test_send_mail(mail:"Mail", config:"ConnectionConfig"):
+async def test_send_mail(mail: "Mail", config: "ConnectionConfig"):
     mail.backend = "locmem"
     await mail.send_mail(
         subject="testing",
@@ -19,8 +20,9 @@ async def test_send_mail(mail:"Mail", config:"ConnectionConfig"):
     sent_msg = mail.outbox[0]
     assert sent_msg.from_email == config.dict().get("MAIL_DEFAULT_SENDER")
 
+
 @pt.mark.anyio
-async def test_send_mass_mail(mail:"Mail"):
+async def test_send_mass_mail(mail: "Mail"):
     mail.backend = "locmem"
     message1 = (
         'Subject here',

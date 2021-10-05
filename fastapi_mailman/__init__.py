@@ -1,10 +1,13 @@
 """
 Tools for sending email.
 """
+import types as ty
+import typing as t
 from importlib import import_module
 
-from fastapi_mailman.utils import DNS_NAME, CachedDnsName
 from pydantic import EmailStr
+
+from fastapi_mailman.utils import DNS_NAME, CachedDnsName
 
 from .message import (
     DEFAULT_ATTACHMENT_MIME_TYPE,
@@ -16,13 +19,13 @@ from .message import (
     forbid_multi_line_headers,
     make_msgid,
 )
-import types as ty
-import typing as t
 
 if t.TYPE_CHECKING:
     from fastapi_mailman.backends.base import BaseEmailBackend
+
     from .config import ConnectionConfig
-    Mailman =t.TypeVar("Mailman", bound="Mail")
+
+    Mailman = t.TypeVar("Mailman", bound="Mail")
 
 from . import globals
 
@@ -45,7 +48,6 @@ available_backends = ['console', 'dummy', 'file', 'smtp', 'locmem']
 
 
 class _MailMixin(object):
-    
     def _get_backend_from_module(self, backend_module_name: str, backend_class_name: str) -> "BaseEmailBackend":
         """
         import the backend module and return the backend class.
@@ -114,12 +116,12 @@ class _MailMixin(object):
         constructor of the backend.
         """
         if globals.MAILMAN is None:
-                raise NotImplementedError("Default Mail object isn't created yet.")
+            raise NotImplementedError("Default Mail object isn't created yet.")
 
         try:
             backend = backend or globals.MAILMAN.backend
 
-            klass:"BaseEmailBackend" = self.import_backend(backend)
+            klass: "BaseEmailBackend" = self.import_backend(backend)
 
         except ImportError:
             err_msg = (
@@ -132,15 +134,15 @@ class _MailMixin(object):
 
     async def send_mail(
         self,
-        subject:str,
-        message:str,
-        from_email:t.Optional[EmailStr]=None,
-        recipient_list:t.Optional[t.List[EmailStr]]=None,
-        fail_silently:bool=False,
-        auth_user:t.Optional[str]=None,
-        auth_password:t.Optional[str]=None,
-        connection:t.Optional["BaseEmailBackend"]=None,
-        html_message:t.Optional[str]=None,
+        subject: str,
+        message: str,
+        from_email: t.Optional[EmailStr] = None,
+        recipient_list: t.Optional[t.List[EmailStr]] = None,
+        fail_silently: bool = False,
+        auth_user: t.Optional[str] = None,
+        auth_password: t.Optional[str] = None,
+        connection: t.Optional["BaseEmailBackend"] = None,
+        html_message: t.Optional[str] = None,
     ) -> t.Coroutine:
         """
         Easy wrapper for sending a single message to a recipient list. All members
@@ -150,27 +152,29 @@ class _MailMixin(object):
         If auth_password is None, use the MAIL_PASSWORD setting.
         """
         if globals.MAILMAN is None:
-                raise NotImplementedError("Default Mail object isn't created yet.")
+            raise NotImplementedError("Default Mail object isn't created yet.")
 
         connection = connection or self.get_connection(
             username=auth_user,
             password=auth_password,
             fail_silently=fail_silently,
         )
-        mail = EmailMultiAlternatives(subject, message, from_email, recipient_list, connection=connection, mailman=globals.MAILMAN)
+        mail = EmailMultiAlternatives(
+            subject, message, from_email, recipient_list, connection=connection, mailman=globals.MAILMAN
+        )
         if html_message:
             mail.attach_alternative(html_message, 'text/html')
 
         return await mail.send()
 
     async def send_mass_mail(
-        self, 
-        datatuple:t.Tuple[str, str, str, t.List[EmailStr]], 
-        fail_silently:bool=False, 
-        auth_user:t.Optional[str]=None, 
-        auth_password:t.Optional[str]=None, 
-        connection:"BaseEmailBackend"=None
-        ) -> t.Coroutine:
+        self,
+        datatuple: t.Tuple[str, str, str, t.List[EmailStr]],
+        fail_silently: bool = False,
+        auth_user: t.Optional[str] = None,
+        auth_password: t.Optional[str] = None,
+        connection: "BaseEmailBackend" = None,
+    ) -> t.Coroutine:
         """
         Given a datatuple of (subject, message, from_email, recipient_list), send
         each message to each recipient list. Return the number of emails sent.
@@ -184,7 +188,7 @@ class _MailMixin(object):
         functionality should use the EmailMessage class directly.
         """
         if globals.MAILMAN is None:
-                raise NotImplementedError("Default Mail object isn't created yet.")
+            raise NotImplementedError("Default Mail object isn't created yet.")
 
         connection = connection or self.get_connection(
             username=auth_user,
@@ -204,12 +208,11 @@ class Mail(_MailMixin):
     :param config: Default ConnectionConfig pydantic instance
     """
 
-    def __init__(self, config:"ConnectionConfig"):
-        self.config:"ConnectionConfig" = config
+    def __init__(self, config: "ConnectionConfig"):
+        self.config: "ConnectionConfig" = config
         self.state = self.initIns()
 
-
-    def init_mail(self, config:"ConnectionConfig") -> "Mail":
+    def init_mail(self, config: "ConnectionConfig") -> "Mail":
         config_dict = config.dict()
 
         self.server = config_dict.get('MAIL_SERVER')
@@ -229,7 +232,7 @@ class Mail(_MailMixin):
         return self
 
     def initIns(self) -> "Mail":
-        state:"Mail" = self.init_mail(self.config)
+        state: "Mail" = self.init_mail(self.config)
         # global MAILMAN
         globals.MAILMAN = state
         return state

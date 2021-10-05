@@ -1,13 +1,12 @@
 """SMTP email backend class."""
-import aiosmtplib
 import ssl
 import threading
+import typing as t
+
+import aiosmtplib
 
 from fastapi_mailman.backends.base import BaseEmailBackend
 from fastapi_mailman.message import sanitize_address
-from fastapi_mailman.utils import DNS_NAME
-
-import typing as t
 
 
 class EmailBackend(BaseEmailBackend):
@@ -81,10 +80,10 @@ class EmailBackend(BaseEmailBackend):
 
             if not self.use_ssl and self.use_tls:
                 await self.connection.starttls(client_key=self.ssl_keyfile, client_cert=self.ssl_certfile)
-            
+
             if self.username and self.password:
                 await self.connection.login(self.username, self.password)
-            
+
             return True
 
         except OSError:

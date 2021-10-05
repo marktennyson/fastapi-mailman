@@ -1,8 +1,9 @@
+import typing as t
+
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseSettings as Settings
 from pydantic import DirectoryPath, EmailStr, validator
 
-import typing as t
 
 class ConnectionConfig(Settings):
     MAIL_USERNAME: str
@@ -16,18 +17,16 @@ class ConnectionConfig(Settings):
     TEMPLATE_FOLDER: t.Optional[DirectoryPath] = None
     MAIL_SSL_KEYFILE: t.Optional[str] = None
     MAIL_SSL_CERTFILE: t.Optional[str] = None
-    MAIL_USE_LOCALTIME:bool = False
-    MAIL_FILE_PATH:t.Optional[str] = None
-    MAIL_TIMEOUT:t.Optional[int] = None
-    MAIL_DEFAULT_CHARSET:str = 'utf-8'
+    MAIL_USE_LOCALTIME: bool = False
+    MAIL_FILE_PATH: t.Optional[str] = None
+    MAIL_TIMEOUT: t.Optional[int] = None
+    MAIL_DEFAULT_CHARSET: str = 'utf-8'
 
     def template_engine(self) -> Environment:
         """Return template environment."""
         folder = self.TEMPLATE_FOLDER
         if not folder:
-            raise ValueError(
-                'Class initialization did not include a ``TEMPLATE_FOLDER`` ``PathLike`` object.'
-            )
+            raise ValueError('Class initialization did not include a ``TEMPLATE_FOLDER`` ``PathLike`` object.')
         template_env = Environment(loader=FileSystemLoader(folder))
         return template_env
 
@@ -44,5 +43,5 @@ class ConnectionConfig(Settings):
     def mail_backend(cls, *wargs, **kwargs):
         if cls.MAIL_BACKEND is None:
             return 'smtp'
-        
+
         return cls.MAIL_BACKEND

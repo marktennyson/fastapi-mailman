@@ -1,4 +1,5 @@
 import mimetypes
+import typing as t
 from email import charset as Charset
 from email import encoders as Encoders
 from email import generator, message_from_string
@@ -16,10 +17,8 @@ from pathlib import Path
 
 from pydantic.networks import EmailStr
 
-from fastapi_mailman.utils import DNS_NAME, force_str, punycode
 from fastapi_mailman import globals
-
-import typing as t
+from fastapi_mailman.utils import DNS_NAME, force_str, punycode
 
 if t.TYPE_CHECKING:
     from . import Mailman
@@ -60,7 +59,7 @@ ADDRESS_HEADERS = {
 
 
 def forbid_multi_line_headers(name, val, encoding):
-    
+
     """Forbid multi-line headers to prevent header injection."""
     encoding = encoding
     val = str(val)  # val may be lazy
@@ -193,17 +192,17 @@ class EmailMessage:
 
     def __init__(
         self,
-        subject:str='',
-        body:str='',
-        from_email:t.Optional[EmailStr]=None,
-        to:t.Optional[t.List[EmailStr]]=None,
-        cc:t.Optional[t.List[EmailStr]]=None,
-        bcc:t.Optional[t.List[EmailStr]]=None,
-        reply_to:t.Optional[EmailStr]=None,
-        attachments:t.Tuple[MIMEBase]=None,
-        headers:t.Optional[t.Dict[str, t.Any]]=None,
-        connection:t.Type["BaseEmailBackend"]=None,
-        mailman:t.Optional["Mailman"]=None
+        subject: str = '',
+        body: str = '',
+        from_email: t.Optional[EmailStr] = None,
+        to: t.Optional[t.List[EmailStr]] = None,
+        cc: t.Optional[t.List[EmailStr]] = None,
+        bcc: t.Optional[t.List[EmailStr]] = None,
+        reply_to: t.Optional[EmailStr] = None,
+        attachments: t.Tuple[MIMEBase] = None,
+        headers: t.Optional[t.Dict[str, t.Any]] = None,
+        connection: t.Type["BaseEmailBackend"] = None,
+        mailman: t.Optional["Mailman"] = None,
     ):
         """
         Initialize a single email message (which can be sent to multiple
@@ -293,7 +292,7 @@ class EmailMessage:
         """
         return [email for email in (self.to + self.cc + self.bcc) if email]
 
-    async def send(self, fail_silently:bool=False):
+    async def send(self, fail_silently: bool = False):
         """Send the email message."""
         if not self.recipients():
             # Don't bother creating the network connection if there's nobody to
@@ -436,35 +435,25 @@ class EmailMultiAlternatives(EmailMessage):
 
     def __init__(
         self,
-        subject:str='',
-        body:str='',
-        from_email:t.Optional[EmailStr]=None,
-        to:t.Optional[t.List[EmailStr]]=None,
-        cc:t.Optional[t.List[EmailStr]]=None,
-        bcc:t.Optional[t.List[EmailStr]]=None,
-        reply_to:t.Optional[EmailStr]=None,
-        attachments:t.Tuple[MIMEBase]=None,
-        headers:t.Optional[t.Dict[str, t.Any]]=None,
-        alternatives:t.Optional[list] = None,
-        connection:t.Type["BaseEmailBackend"]=None,
-        mailman:t.Optional["Mailman"]=None
+        subject: str = '',
+        body: str = '',
+        from_email: t.Optional[EmailStr] = None,
+        to: t.Optional[t.List[EmailStr]] = None,
+        cc: t.Optional[t.List[EmailStr]] = None,
+        bcc: t.Optional[t.List[EmailStr]] = None,
+        reply_to: t.Optional[EmailStr] = None,
+        attachments: t.Tuple[MIMEBase] = None,
+        headers: t.Optional[t.Dict[str, t.Any]] = None,
+        alternatives: t.Optional[list] = None,
+        connection: t.Type["BaseEmailBackend"] = None,
+        mailman: t.Optional["Mailman"] = None,
     ):
         """
         Initialize a single email message (which can be sent to multiple
         recipients).
         """
         super(EmailMultiAlternatives, self).__init__(
-            subject,
-            body,
-            from_email,
-            to,
-            cc,
-            bcc,
-            reply_to,
-            attachments,
-            headers,
-            connection,
-            mailman
+            subject, body, from_email, to, cc, bcc, reply_to, attachments, headers, connection, mailman
         )
         self.alternatives = alternatives or []
 
