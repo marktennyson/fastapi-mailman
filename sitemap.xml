@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://marktennyson.github.io/fastapi-mailman/</loc>
+         <lastmod>2021-10-05</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://marktennyson.github.io/fastapi-mailman/changelog/</loc>
+         <lastmod>2021-10-05</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://marktennyson.github.io/fastapi-mailman/contributing/</loc>
+         <lastmod>2021-10-05</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+</urlset>
