@@ -19,10 +19,7 @@ class EmailBackend(ConsoleEmailBackend):
         kwargs['stream'] = None
         super().__init__(*args, **kwargs)
         self._fname = None
-        if file_path is not None:
-            self.file_path = file_path
-        else:
-            self.file_path = self.mailman.file_path
+        self.file_path = file_path if file_path is not None else self.mailman.file_path
         self.file_path = os.path.abspath(self.file_path)
         try:
             os.makedirs(self.file_path, exist_ok=True)

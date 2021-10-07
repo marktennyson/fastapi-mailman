@@ -7,13 +7,12 @@ from fastapi_mailman.config import ConnectionConfig
 
 @pt.fixture
 def app() -> "FastAPI":
-    app = FastAPI(debug=True)
-    return app
+    return FastAPI(debug=True)
 
 
 @pt.fixture
 def config() -> "ConnectionConfig":
-    config = ConnectionConfig(
+    return ConnectionConfig(
         MAIL_USERNAME='example@domain.com',
         MAIL_PASSWORD="7655tgrf443%$",
         MAIL_BACKEND='smtp',
@@ -23,7 +22,6 @@ def config() -> "ConnectionConfig":
         MAIL_USE_SSL=False,
         MAIL_DEFAULT_SENDER='example@domain.com',
     )
-    return config
 
 
 @pt.fixture

@@ -13,16 +13,16 @@ Fastapi-Mailman is a Fastapi extension providing simple email sending capabiliti
 It was meant to replace the basic Fastapi-Mail with a better warranty and more features.
 
 ## ⛲ Key Features:
-1. Easy to use. 
+1. Easy to use.
 2. Backend based email sender.
-3. Customisable backend class. 
-4. Proper testcases. 
+3. Customisable backend class.
+4. Proper testcases.
 5. Proper documentation.
 
 ## 🔗 Important Links:
-[Github Repo](https://github.com/marktennyson/fastapi-mailman)    
-[PYPI](https://pypi.org/project/fastapi-mailman)    
-[Documentation](https://marktennyson.github.io/fastapi-mailman)    
+[Github Repo](https://github.com/marktennyson/fastapi-mailman)
+[PYPI](https://pypi.org/project/fastapi-mailman)
+[Documentation](https://marktennyson.github.io/fastapi-mailman)
 
 ## 💯 Usage
 

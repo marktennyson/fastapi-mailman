@@ -97,13 +97,12 @@ class _MailMixin(object):
                 backend_module_name: str = default_backend_loc + "." + backend_name
                 backend: "BaseEmailBackend" = self._get_backend_from_module(backend_module_name, default_backend_class)
 
-            else:
-                if backend_name.endswith(default_backend_class):
-                    backend_module_name, backend_class_name = backend_name.rsplit('.', 1)
-                    backend: "BaseEmailBackend" = self._get_backend_from_module(backend_module_name, backend_class_name)
+            elif backend_name.endswith(default_backend_class):
+                backend_module_name, backend_class_name = backend_name.rsplit('.', 1)
+                backend: "BaseEmailBackend" = self._get_backend_from_module(backend_module_name, backend_class_name)
 
-                else:
-                    backend: "BaseEmailBackend" = self._get_backend_from_module(backend_name, default_backend_class)
+            else:
+                backend: "BaseEmailBackend" = self._get_backend_from_module(backend_name, default_backend_class)
 
         return backend
 
