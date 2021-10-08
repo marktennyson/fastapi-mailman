@@ -62,7 +62,7 @@ async def test_send_single(mail: "Mail"):
 async def test_send_many(mail: "Mail"):
     async with mail.get_connection() as conn:
         msgs = []
-        for i in range(10):
+        for _ in range(10):
             msg = EmailMessage(mailman=mail, subject="testing", to=["to@example.com"], body="testing")
             msgs.append(msg)
         await conn.send_messages(msgs)
