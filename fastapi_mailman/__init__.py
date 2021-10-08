@@ -67,22 +67,8 @@ class _MailMixin(object):
         This is the base method to import the backend service.
         This method will implement the feature for fastapi_mailman to take custom backends.
 
-        Now you can create your own backend class and implement with flask mailman.
+        Now you can create your own backend class and implement with fastapi mailman.
 
-        :for example::
-
-            from flask import Flask
-
-            app = Flask(__name__)
-            app.config['MAIL_BACKEND'] = 'locmem'
-            #or
-            app.config['MAIL_BACKEND'] = 'smtp'
-            #or
-            app.config['MAIL_BACKEND'] = 'fastapi_mailman.backends.locmem'
-            #or
-            app.config['MAIL_BACKEND'] = 'fastapi_mailman.backends.locmem.EmailBackend'
-            #or
-            app.config['MAIL_BACKEND'] = 'your_project.mail.backends.custom.EmailBackend'
         """
         backend: t.Optional["BaseEmailBackend"] = None
 

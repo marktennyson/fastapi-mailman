@@ -78,7 +78,7 @@ if __name__ == "__main__":
 5. Submit a pull request under the `master` branch.
 
 #### 🖨️ Run this project on your local machine.
-To run this project on your local machine please [click here](https://marktennyson.github.io/fastapi-mailman/Contributing)
+To run this project on your local machine please [click here](https://marktennyson.github.io/fastapi-mailman/contributing)
 
 ### ❤️ Contributors
 Credits goes to these peoples:
