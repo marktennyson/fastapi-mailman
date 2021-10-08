@@ -20,9 +20,9 @@ It was meant to replace the basic Fastapi-Mail with a better warranty and more f
 5. Proper documentation.
 
 ## 🔗 Important Links:
-[Github Repo](https://github.com/marktennyson/fastapi-mailman)
-[PYPI](https://pypi.org/project/fastapi-mailman)
-[Documentation](https://marktennyson.github.io/fastapi-mailman)
+[Github Repo](https://github.com/marktennyson/fastapi-mailman)     
+[PYPI](https://pypi.org/project/fastapi-mailman)     
+[Documentation](https://marktennyson.github.io/fastapi-mailman)      
 
 ## 💯 Usage
 
