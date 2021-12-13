@@ -89,6 +89,6 @@ Credits goes to these peoples:
 
 ## 📝 License
 
-GNU General Public License v3 or later (GPLv3+)
+[MIT](https://github.com/marktennyson/fastapi-mailman/blob/master/LICENSE)
 
 Copyright (c) 2021 Aniket Sarkar(aniketsarkar@yahoo.com)
