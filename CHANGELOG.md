@@ -2,3 +2,7 @@
 - Some typo fixed at README.md
 - Some broken link fixed at README.md
 - Prevent the log file overlapping issue.
+
+## 0.0.3
+- License changed to MIT from GPL3.
+- Added the patch version of PIP.

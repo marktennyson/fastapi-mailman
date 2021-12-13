@@ -49,7 +49,7 @@ class EmailBackend(ConsoleEmailBackend):
             self._fname = os.path.join(self.file_path, fname)
         return self._fname
 
-    async def open(self): 
+    async def open(self):
         if self.stream is None:
             self.stream = open(self._get_filename(), 'ab')
             return True
