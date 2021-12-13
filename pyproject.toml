@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Fastapi-Mailman"
-version = "0.0.2"
+version = "0.0.3"
 description = "Porting Django's email implementation to your FastAPI applications."
 authors = ["Aniket Sarkar <aniketsarkar@yahoo.com>"]
 license = "MIT"
