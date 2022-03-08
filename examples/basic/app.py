@@ -19,9 +19,9 @@ config = ConnectionConfig(
     MAIL_BACKEND=environ.get("MAIL_BACKEND"),
     MAIL_SERVER=environ.get("MAIL_SERVER"),
     MAIL_PORT=environ.get("MAIL_PORT"),
-    MAIL_USE_TLS=environ.get("MAIL_USE_TLS"),
-    MAIL_USE_SSL=environ.get("MAIL_USE_SSL"),
-    MAIL_DEFAULT_SENDER=environ.get("MAIL_DEFAULT_SENDER"),
+    MAIL_USE_TLS=environ.get("MAIL_USE_TLS", True),
+    MAIL_USE_SSL=environ.get("MAIL_USE_SSL", False),
+    MAIL_DEFAULT_SENDER=environ.get("MAIL_DEFAULT_SENDER", environ.get("MAIL_USERNAME")),
 )
 mail = Mail(config)
 

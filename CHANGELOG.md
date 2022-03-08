@@ -7,5 +7,6 @@
 - License changed to MIT from GPL3.
 - Added the patch version of PIP.
 
-## 0.0.4 [Upcoming]
+## 0.0.4
 - Remove the typo of the GPL license name at the end of theb README.md file.
+- Dependency update.
