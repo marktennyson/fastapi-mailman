@@ -1,33 +1,83 @@
-site_name: Fastapi-Mailman
+site_name: FastAPI-Mailman
+site_description: Django-style email sending for FastAPI
 site_url: https://marktennyson.github.io/fastapi-mailman
 repo_url: https://github.com/marktennyson/fastapi-mailman
 repo_name: marktennyson/fastapi-mailman
+edit_uri: edit/master/docs/
 dev_addr: localhost:8080
+
 nav:
-  - Tutorial: index.md
+  - Home: index.md
   - Contributing: contributing.md
   - Changelog: changelog.md
+
 theme:
   name: material
   palette:
-    scheme: preference
-    primary: indigo
-    accent: indigo
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
   icon:
-    repo: fontawesome/brands/github-alt
-  logo: https://raw.githubusercontent.com/marktennyson/fastapi-mailman/master/logos/fastapi_mailman_logo.png?token=ALCBDWVGKS42MM34S3WHU2TBLKT7Q
-  favicon: https://raw.githubusercontent.com/marktennyson/fastapi-mailman/master/logos/fastapi_mailman_logo.png?token=ALCBDWVGKS42MM34S3WHU2TBLKT7Q
+    repo: fontawesome/brands/github
+  logo: https://raw.githubusercontent.com/marktennyson/fastapi-mailman/master/logos/fastapi_mailman_logo.png
+  favicon: https://raw.githubusercontent.com/marktennyson/fastapi-mailman/master/logos/fastapi_mailman_logo.png
   language: en
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
 markdown_extensions:
-  - pymdownx.highlight:
-      linenums: false
-      linenums_style: pymdownx.inline
+  - admonition
+  - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
   - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+  - attr_list
+  - md_in_html
+
 plugins:
-  - include-markdown
   - search:
       lang: en
+  - include-markdown
   - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+            heading_level: 2
       watch:
         - fastapi_mailman
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/marktennyson/fastapi-mailman
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/fastapi-mailman/

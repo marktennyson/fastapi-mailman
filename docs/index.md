@@ -1,548 +1,452 @@
-# Welcome to Fastapi-Mailman
+# FastAPI-Mailman
 
-The core part of this extension's source code comes directly from Django's mail module, but with a few interface [differences](#differences-with-django).
+**Django-style email sending for FastAPI applications**
 
-And following documentation also draws heavily from Django's.
+FastAPI-Mailman brings Django's robust email implementation to FastAPI with full async support. It's production-ready, fully typed, and designed for modern Python 3.10+.
+
+## Features
+
+- 🚀 **Full Async Support** - Built for async/await from the ground up
+- 📧 **Multiple Backends** - SMTP, Console, File, In-Memory, and Dummy backends
+- 🔒 **Type Safe** - Fully typed with PEP 561 compliance
+- 🎨 **Jinja2 Templates** - Built-in template support for HTML emails
+- 🔌 **Extensible** - Easy to create custom backends
+- ⚡ **Pydantic v2** - Modern configuration with Pydantic Settings
+- 🧪 **Test-Friendly** - In-memory backend for easy testing
 
 ## Installation
 
-Install with `pip`:
 ```bash
-pip install Fastapi-Mailman
+pip install fastapi-mailman
+```
+
+## Quick Start
+
+```python
+from fastapi import FastAPI
+from fastapi_mailman import Mail, EmailMessage
+from fastapi_mailman.config import ConnectionConfig
+
+app = FastAPI()
+
+# Configure email
+config = ConnectionConfig(
+    MAIL_USERNAME="your-email@gmail.com",
+    MAIL_PASSWORD="your-app-password",
+    MAIL_SERVER="smtp.gmail.com",
+    MAIL_PORT=587,
+    MAIL_USE_TLS=True,
+    MAIL_DEFAULT_SENDER="your-email@gmail.com",
+)
+
+mail = Mail(config)
+
+
+@app.post("/send-email")
+async def send_email():
+    msg = EmailMessage(
+        subject="Hello from FastAPI-Mailman!",
+        body="This is a test email.",
+        to=["recipient@example.com"],
+    )
+    await msg.send()
+    return {"message": "Email sent!"}
 ```
 
 ## Configuration
 
-Fastapi-Mailman is configured through the inbuild `ConnectionConfig` a `Pydantic` based class. A list of configuration attributes currently understood by the extension:
+FastAPI-Mailman uses Pydantic Settings for configuration. All options can be set via environment variables or passed directly to `ConnectionConfig`.
 
-- **MAIL_SERVER**: The host to use for sending email.
+### Available Options
 
-    default ‘localhost’.
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `MAIL_USERNAME` | str | **Required** | SMTP authentication username |
+| `MAIL_PASSWORD` | str | **Required** | SMTP authentication password |
+| `MAIL_SERVER` | str | **Required** | SMTP server hostname |
+| `MAIL_PORT` | int | `587` | SMTP server port |
+| `MAIL_USE_TLS` | bool | `False` | Enable STARTTLS |
+| `MAIL_USE_SSL` | bool | `False` | Enable SSL/TLS |
+| `MAIL_DEFAULT_SENDER` | str | `None` | Default sender email |
+| `MAIL_BACKEND` | str | `"smtp"` | Email backend to use |
+| `MAIL_TIMEOUT` | int | `None` | Connection timeout (seconds) |
+| `MAIL_SSL_KEYFILE` | str | `None` | Path to SSL key file |
+| `MAIL_SSL_CERTFILE` | str | `None` | Path to SSL certificate file |
+| `MAIL_USE_LOCALTIME` | bool | `False` | Use local time in headers |
+| `MAIL_FILE_PATH` | str | `None` | Directory for file backend |
+| `TEMPLATE_FOLDER` | Path | `None` | Path to email templates |
+| `MAIL_DEFAULT_CHARSET` | str | `"utf-8"` | Default character encoding |
 
-- **MAIL_PORT**: Port to use for the SMTP server.
+!!! note "TLS vs SSL"
+    `MAIL_USE_TLS` and `MAIL_USE_SSL` are mutually exclusive. Use TLS (port 587) for most modern SMTP servers, or SSL (port 465) for legacy servers.
 
-    default 25.
+## Sending Messages
 
-- **MAIL_USERNAME**: Username to use for the SMTP server. If empty, Fastapi-Mailman won’t attempt authentication.
+### Basic Email
 
-    default None.
-
-- **MAIL_PASSWORD**: Password to use for the SMTP server defined in MAIL_HOST. This setting is used in conjunction with MAIL_USERNAME when authenticating to the SMTP server. If either of these configs is empty, Fastapi-Mailman won’t attempt authentication.
-
-    default None.
-
-- **MAIL_USE_TLS**: Whether to use a TLS (secure) connection when talking to the SMTP server. This is used for explicit TLS connections, generally on port 587.
-
-    default False.
-
-- **MAIL_USE_SSL**: Whether to use an implicit TLS (secure) connection when talking to the SMTP server. In most email documentation this type of TLS connection is referred to as SSL. It is generally used on port 465.
-
-    default False
-
-- **MAIL_TIMEOUT**: Specifies a timeout in seconds for blocking operations like the connection attempt.
-
-    default None.
-
-- **MAIL_SSL_KEYFILE**: If MAIL_USE_SSL or MAIL_USE_TLS is True, you can optionally specify the path to a PEM-formatted certificate chain file to use for the SSL connection.
-
-    default None.
-
-- **MAIL_SSL_CERTFILE**: If MAIL_USE_SSL or MAIL_USE_TLS is True, you can optionally specify the path to a PEM-formatted private key file to use for the SSL connection.
-
-    Note that setting MAIL_SSL_CERTFILE and MAIL_SSL_KEYFILE doesn’t result in any certificate checking. They’re passed to the underlying SSL connection. Please refer to the documentation of Python’s `ssl.wrap_socket()` function for details on how the certificate chain file and private key file are handled.
-
-    default None.
-
-- **MAIL_DEFAULT_SENDER**: Default email address to use for various automated correspondence from the site manager(s).
-
-    default None.
-
-- **MAIL_BACKEND**: The backend to use for sending emails.
-
-    Default: 'smtp'. In addition the standard FastAPI TESTING configuration option is used for testing. When`MAIL_BACKEND` is not provided, default will be set to 'smtp'.
-
-- **MAIL_FILE_PATH**: The directory used by the file email backend to store output files.
-
-    Default: Not defined.
-
-- **MAIL_USE_LOCALTIME**: Whether to send the SMTP **Date** header of email messages in the local time zone (True) or in UTC (False).
-
-    Default: False.
-
-Create a ConnectionConfig object to pass all the required config attributes:
 ```python
-from fastapi import FastAPI
-from fastapi_mailman.config import ConnectionConfig
-
-config = ConnectionConfig(
-    MAIL_USERNAME = 'example@domain.com',
-    MAIL_PASSWORD = "7655tgrf443%$",
-    MAIL_BACKEND =  'smtp',
-    MAIL_SERVER =  'smtp.gmail.com',
-    MAIL_PORT = 587,
-    MAIL_USE_TLS = True,
-    MAIL_USE_SSL = False,
-    MAIL_DEFAULT_SENDER = 'example@domain.com',
-    )
-
-mail = Mail(mail)
-```
-In this case all emails are sent using the configuration values of the application that was passed to the *Mail* class constructor.
-
-
-## Sending messages
-
-To send a message first create a `EmailMessage` instance:
-```python hl_lines="3-11"
 from fastapi_mailman import EmailMessage
 
 msg = EmailMessage(
-    mail,
-    'Hello',
-    'Body goes here',
-    'from@example.com',
-    ['to1@example.com', 'to2@example.com'],
-    ['bcc@example.com'],
-    reply_to=['another@example.com'],
-    headers={'Message-ID': 'foo'},
-)
-await msg.send()
-```
-Then send the message using asynchronous `send()` method:
-```python hl_lines="12 13"
-from fastapi_mailman import EmailMessage
-
-msg = EmailMessage(
-    mail,
-    'Hello',
-    'Body goes here',
-    'from@example.com',
-    ['to1@example.com', 'to2@example.com'],
-    ['bcc@example.com'],
-    reply_to=['another@example.com'],
-    headers={'Message-ID': 'foo'},
+    subject="Hello",
+    body="This is the message body.",
+    from_email="sender@example.com",
+    to=["recipient@example.com"],
+    cc=["cc@example.com"],
+    bcc=["bcc@example.com"],
+    reply_to=["reply@example.com"],
 )
 await msg.send()
 ```
 
-The `EmailMessage` class is initialized with the following parameters (in the given order, if positional arguments are used).
-All parameters are optional and can be set at any time prior to calling the `send()` method.
+### HTML Email
 
-- **mail**: The instance of the default `fastapi_mailman.Mail` class.
-- **subject**: The subject line of the email.
-- **body**: The body text. This should be a plain text message.
-- **from_email**: The sender’s address. Both `fred@example.com` or `"Fred" <fred@example.com>` forms are legal. If omitted, the MAIL_DEFAULT_SENDER config is used.
-- **to**: A list or tuple of recipient addresses.
-- **bcc**: A list or tuple of addresses used in the “Bcc” header when sending the email.
-- **connection**: An email backend instance. Use this parameter if you want to use the same connection for multiple messages. If omitted, a new connection is created when `send()` is called.
-- **attachments**: A list of attachments to put on the message. These can be either MIMEBase instances, or (filename, content, mimetype) triples.
-- **headers**: A dictionary of extra headers to put on the message. The keys are the header name, values are the header values. It’s up to the caller to ensure header names and values are in the correct format for an email message. The corresponding attribute is `extra_headers`.
-- **cc**: A list or tuple of recipient addresses used in the “Cc” header when sending the email.
-- **reply_to**: A list or tuple of recipient addresses used in the “Reply-To” header when sending the email.
-
-`await EmailMessage.send(fail_silently=False)` sends the message.
-
-If a connection was specified when the email was constructed, that connection will be used. Otherwise, an instance of the default backend will be instantiated and used.
-
-If the keyword argument `fail_silently` is True, exceptions raised while sending the message will be quashed. An empty list of recipients will not raise an exception.
-
-### Sending html content
-
-By default, the **MIME** type of the body parameter in an `EmailMessage` is "text/plain". It is good practice to leave this alone, because it guarantees that any recipient will be able to read the email, regardless of their mail client. However, if you are confident that your recipients can handle an alternative content type, you can use the `content_subtype` attribute on the `EmailMessage` class to change the main content type. The major type will always be "text", but you can change the subtype. For example:
-
-```python
-from fastapi_mailman import EmailMessage
-
-subject, from_email, to = 'hello', 'from@example.com', 'to@example.com'
-html_content = '<p>This is an <strong>important</strong> message.</p>'
-
-msg = EmailMessage(mail, subject, html_content, from_email, [to])
-msg.content_subtype = "html"  # Main content is now text/html
-await msg.send()
-```
-
-### Sending multiple emails
-
-Establishing and closing an SMTP connection (or any other network connection, for that matter) is an expensive process. If you have a lot of emails to send, it makes sense to reuse an SMTP connection, rather than creating and destroying a connection every time you want to send an email.
-
-There are two ways you tell an email backend to reuse a connection.
-
-Firstly, you can use the `send_messages()` method. `send_messages()` takes a list of `EmailMessage` instances (or subclasses), and sends them all using a single connection.
-
-For example, if you have a function called `get_notification_email()` that returns a list of `EmailMessage` objects representing some periodic email you wish to send out, you could send these emails using a single call to `send_messages`:
-
-```python
-from fastapi import FastAPI
-from fastapi_mailman import Mail
-
-app = FastAPI()
-mail = Mail(config)
-
-connection = mail.get_connection()   # Use default email connection
-messages = get_notification_email()
-await connection.send_messages(messages)
-```
-
-In this example, the call to `send_messages()` opens a connection on the backend, sends the list of messages, and then closes the connection again.
-
-The second approach is to use the `open()` and `close()` methods on the email backend to manually control the connection. `send_messages()` will not manually open or close the connection if it is already open, so if you manually open the connection, you can control when it is closed. For example:
-
-```python
-from fastapi import FastAPI
-from fastapi_mailman import Mail, EmailMessage
-
-app = FastAPI()
-mail = Mail(config)
-
-connection = mail.get_connection()
-
-# Manually open the connection
-await connection.open()
-
-# Construct an email message that uses the connection
-email1 = EmailMessage(
-    mail,
-    'Hello',
-    'Body goes here',
-    'from@example.com',
-    ['to1@example.com'],
-    connection=connection,
-)
-await email1.send() # Send the email
-
-# Construct two more messages
-email2 = EmailMessage(
-    'Hello',
-    'Body goes here',
-    'from@example.com',
-    ['to2@example.com'],
-)
-email3 = EmailMessage(
-    'Hello',
-    'Body goes here',
-    'from@example.com',
-    ['to3@example.com'],
-)
-
-# Send the two emails in a single call -
-await connection.send_messages([email2, email3])
-# The connection was already open so send_messages() doesn't close it.
-# We need to manually close the connection.
-await connection.close()
-```
-
-Of course there is always a short writing using `with`:
-
-```python
-from fastapi import FastAPI
-from fastapi_mailman import Mail, EmailMessage
-
-app = FastAPI()
-mail = Mail(config)
-
-async with mail.get_connection() as conn:
-    email1 = EmailMessage(
-    mail,
-    'Hello',
-    'Body goes here',
-    'from@example.com',
-    ['to1@example.com'],
-    connection=conn,
-    )
-    await email1.send()
-
-    email2 = EmailMessage(
-        'Hello',
-        'Body goes here',
-        'from@example.com',
-        ['to2@example.com'],
-    )
-    email3 = EmailMessage(
-        'Hello',
-        'Body goes here',
-        'from@example.com',
-        ['to3@example.com'],
-    )
-    await conn.send_messages([email2, email3])
-```
-
-## Attachments
-
-You can use the following two methods to adding attachments:
-
-- `EmailMessage.attach()` creates a new file attachment and adds it to the message. There are two ways to call `attach()`:
-
-    - You can pass it a single argument that is a **MIMEBase** instance. This will be inserted directly into the resulting message.
-
-    - Alternatively, you can pass `attach()` three arguments: **filename**, **content** and **mimetype**. filename is the name of the file attachment as it will appear in the email, content is the data that will be contained inside the attachment and mimetype is the optional MIME type for the attachment. If you omit mimetype, the MIME content type will be guessed from the filename of the attachment.
-
-        For example:
-
-        ```
-        message.attach('design.png', img_data, 'image/png')
-        ```
-
-        If you specify a mimetype of message/rfc822, it will also accept `fastapi_mailman.EmailMessage` and `email.message.Message`.
-
-        For a mimetype starting with text/, content is expected to be a string. Binary data will be decoded using UTF-8, and if that fails, the MIME type will be changed to application/octet-stream and the data will be attached unchanged.
-
-        In addition, message/rfc822 attachments will no longer be base64-encoded in violation of RFC 2046#section-5.2.1, which can cause issues with displaying the attachments in Evolution and Thunderbird.
-
-- `EmailMessage.attach_file()` creates a new attachment using a file from your filesystem. Call it with the path of the file to attach and, optionally, the **MIME** type to use for the attachment. If the **MIME** type is omitted, it will be guessed from the filename. You can use it like this:
-
-    ```
-    message.attach_file('/images/weather_map.png')
-    ```
-
-    For **MIME** types starting with text/, binary data is handled as in `attach()`.
-
-## Preventing header injection
-
-Header injection is a security exploit in which an attacker inserts extra email headers to control the “To:” and “From:” in email messages that your scripts generate.
-
-The Fastapi-Mailman email methods outlined above all protect against header injection by forbidding newlines in header values. If any `subject`, `from_email` or `recipient_list` contains a newline (in either Unix, Windows or Mac style), the email method (e.g. `send_mail()`) will raise `fastapi_mailman.BadHeaderError` (a subclass of `ValueError`) and, hence, will not send the email. It’s your responsibility to validate all data before passing it to the email functions.
-
-If a message contains headers at the start of the string, the headers will be printed as the first bit of the email message.
-
-## Sending alternative content types
-
-It can be useful to include multiple versions of the content in an email; the classic example is to send both text and HTML versions of a message. With this library, you can do this using the `EmailMultiAlternatives` class. This subclass of `EmailMessage` has an `attach_alternative()` method for including extra versions of the message body in the email. All the other methods (including the class initialization) are inherited directly from `EmailMessage`.
-
-To send a text and HTML combination, you could write:
+Use `EmailMultiAlternatives` to send both plain text and HTML:
 
 ```python
 from fastapi_mailman import EmailMultiAlternatives
 
-subject, from_email, to = 'hello', 'from@example.com', 'to@example.com'
-text_content = 'This is an important message.'
-html_content = '<p>This is an <strong>important</strong> message.</p>'
-msg = EmailMultiAlternatives(mail, subject, text_content, from_email, [to])
-msg.attach_alternative(html_content, "text/html")
+msg = EmailMultiAlternatives(
+    subject="Welcome!",
+    body="Welcome to our service.",  # Plain text version
+    to=["user@example.com"],
+)
+msg.attach_alternative(
+    "<h1>Welcome!</h1><p>Welcome to our service.</p>",
+    "text/html"
+)
 await msg.send()
 ```
 
-## Email backends
-
-The actual sending of an email is handled by the email backend.
-
-The email backend class has the following methods:
-
-- `open()` instantiates a long-lived email-sending connection.
-- `close()` closes the current email-sending connection.
-
-`send_messages(email_messages)` sends a list of `EmailMessage` objects. If the connection is not open, this call will implicitly open the connection, and close the connection afterwards. If the connection is already open, it will be left open after mail has been sent.
-It can also be used as a context manager, which will automatically call `open()` and `close()` as needed:
+Or use the convenient `send_mail` helper:
 
 ```python
-from fastapi import FastAPI
-from fastapi_mailman import Mail
-
-app = FastAPI()
-mail = Mail(config)
-
-async with mail.get_connection() as connection:
-    mail.EmailMessage(
-        mail, subject1, body1, from1, [to1],
-        connection=connection,
-    )
-    await mail.send()
-    mail.EmailMessage(
-        mail, subject2, body2, from2, [to2],
-        connection=connection,
-    )
-    await mail.send()
-```
-
-### Obtaining an instance of an email backend
-
-The `get_connection()` method of **Mail** instance returns an instance of the email backend that you can use.
-
-```python
-Mail.get_connection(backend=None, fail_silently=False, *args, **kwargs)
-```
-By default, a call to `get_connection()` will return an instance of the email backend specified in MAIL_BACKEND configuration. If you specify the backend argument, an instance of that backend will be instantiated.
-
-The `fail_silently` argument controls how the backend should handle errors. If `fail_silently` is True, exceptions during the email sending process will be silently ignored.
-
-All other arguments are passed directly to the constructor of the email backend.
-
-Fastapi-Mailman ships with several email sending backends. With the exception of the SMTP backend (which is the default), these backends are only useful during testing and development. If you have special email sending requirements, you can write your own email backend.
-
-### SMTP backend
-
-```python
-class backends.smtp.EmailBackend(
-    host=None,
-    port=None,
-    username=None,
-    password=None,
-    use_tls=None,
-    fail_silently=False,
-    use_ssl=None,
-    timeout=None,
-    ssl_keyfile=None,
-    ssl_certfile=None,
-    **kwargs
+await mail.send_mail(
+    subject="Welcome!",
+    message="Welcome to our service.",
+    recipient_list=["user@example.com"],
+    html_message="<h1>Welcome!</h1><p>Welcome to our service.</p>",
 )
 ```
-This is the default backend. Email will be sent through a SMTP server.
 
-The value for each argument is retrieved from the matching configuration if the argument is None:
-
-- host: MAIL_HOST
-- port: MAIL_PORT
-- username: MAIL_USERNAME
-- password: MAIL_PASSWORD
-- use_tls: MAIL_USE_TLS
-- use_ssl: MAIL_USE_SSL
-- timeout: MAIL_TIMEOUT
-- ssl_keyfile: MAIL_SSL_KEYFILE
-- ssl_certfile: MAIL_SSL_CERTFILE
-
-The SMTP backend is the default configuration inherited by Fastapi-Mailman. If you want to specify it explicitly, put the following in your configurations:
-
-```
-MAIL_BACKEND = 'smtp'
-```
-If unspecified, the default timeout will be the one provided by `socket.getdefaulttimeout()`, which defaults to None (no timeout).
-
-### Console backend
-
-Instead of sending out real emails the console backend just writes the emails that would be sent to the standard output. By default, the console backend writes to stdout. You can use a different stream-like object by providing the stream keyword argument when constructing the connection.
-
-To specify this backend, put the following in your settings:
-
-```
-MAIL_BACKEND = 'console'
-```
-This backend is not intended for use in production – it is provided as a convenience that can be used during development.
-
-### File backend
-
-The file backend writes emails to a file. A new file is created for each new session that is opened on this backend. The directory to which the files are written is either taken from the MAIL_FILE_PATH configuration or from the `file_path` keyword when creating a connection with `Mail.get_connection()`.
-
-To specify this backend, put the following in your configurations:
-
-```
-MAIL_BACKEND = 'file'
-MAIL_FILE_PATH = '/tmp/app-messages' # change this to a proper location
-```
-This backend is not intended for use in production – it is provided as a convenience that can be used during development.
-
-Support for `pathlib.Path` was added.
-
-### In-memory backend
-
-The 'locmem' backend stores messages in a special attribute of the **Mail** instance. The `outbox` attribute is created when the first message is sent. It’s a list with an `EmailMessage` instance for each message that would be sent.
-
-To specify this backend, put the following in your configurations:
-
-```
-MAIL_BACKEND = 'locmem'
-```
-
-This backend is not intended for use in production – it is provided as a convenience that can be used during development and testing.
-
-When `MAIL_BACKEND` is not provided, this backend will be used for testing.
-
-### Dummy backend
-
-As the name suggests the dummy backend does nothing with your messages. To specify this backend, put the following in your configurations:
-
-```
-MAIL_BACKEND = 'dummy'
-```
-
-This backend is not intended for use in production – it is provided as a convenience that can be used during development.
-
-### Defining a custom email backend
-
-If you need to change how emails are sent you can write your own email backend.
-The `MAIL_BACKEND` configuration in your settings file is then the Python import path for your backend class. for example:
-
-```
-MAIL_BACKEND = 'fastapi_mailman.backens.custom'
-```
-
-A more direct way is to import your custom backend class, and pass it to `fastapi_mailman.get_connection` function:
+### Attachments
 
 ```python
-from fastapi import FastAPI
-from fastapi_mailman import Mail
+msg = EmailMessage(
+    subject="Document Attached",
+    body="Please find the document attached.",
+    to=["recipient@example.com"],
+)
 
-from your_custom_backend import CustomBackend
+# Attach from file path
+msg.attach_file("/path/to/document.pdf")
 
-app = FastAPI()
+# Attach content directly
+msg.attach("report.csv", csv_content, "text/csv")
+
+await msg.send()
+```
+
+### Mass Mailing
+
+Send multiple emails efficiently using a single connection:
+
+```python
+messages = [
+    ("Welcome!", "Welcome message", "from@example.com", ["user1@example.com"]),
+    ("Newsletter", "Latest updates", "from@example.com", ["user2@example.com"]),
+]
+
+count = await mail.send_mass_mail(messages)
+print(f"Sent {count} emails")
+```
+
+## Email Backends
+
+FastAPI-Mailman supports multiple backends for different use cases.
+
+### SMTP Backend (Default)
+
+Production backend that sends emails through an SMTP server.
+
+```python
+config = ConnectionConfig(
+    MAIL_USERNAME="user@example.com",
+    MAIL_PASSWORD="password",
+    MAIL_SERVER="smtp.example.com",
+    MAIL_BACKEND="smtp",  # This is the default
+)
+```
+
+### Console Backend
+
+Prints emails to stdout. Useful for development.
+
+```python
+config = ConnectionConfig(
+    MAIL_USERNAME="dev@localhost",
+    MAIL_PASSWORD="",
+    MAIL_SERVER="localhost",
+    MAIL_BACKEND="console",
+)
+```
+
+### File Backend
+
+Writes emails to files. Useful for development and debugging.
+
+```python
+config = ConnectionConfig(
+    MAIL_USERNAME="dev@localhost",
+    MAIL_PASSWORD="",
+    MAIL_SERVER="localhost",
+    MAIL_BACKEND="file",
+    MAIL_FILE_PATH="/tmp/emails",
+)
+```
+
+### In-Memory Backend (locmem)
+
+Stores emails in memory. Perfect for testing.
+
+```python
+config = ConnectionConfig(
+    MAIL_USERNAME="test@example.com",
+    MAIL_PASSWORD="test",
+    MAIL_SERVER="localhost",
+    MAIL_BACKEND="locmem",
+)
+
 mail = Mail(config)
+await mail.send_mail("Test", "Hello", recipient_list=["test@example.com"])
 
+# Access sent emails
+assert len(mail.outbox) == 1
+assert mail.outbox[0].subject == "Test"
+```
+
+### Dummy Backend
+
+Discards all emails. Useful when you want to test code paths without any side effects.
+
+```python
+config = ConnectionConfig(
+    MAIL_USERNAME="dev@localhost",
+    MAIL_PASSWORD="",
+    MAIL_SERVER="localhost",
+    MAIL_BACKEND="dummy",
+)
+```
+
+### Custom Backend
+
+Create your own backend by subclassing `BaseEmailBackend`:
+
+```python
+from fastapi_mailman.backends.base import BaseEmailBackend
+
+class CustomBackend(BaseEmailBackend):
+    async def send_messages(self, email_messages):
+        for message in email_messages:
+            # Your custom sending logic here
+            pass
+        return len(email_messages)
+
+# Use the custom backend
 connection = mail.get_connection(backend=CustomBackend)
 await connection.send_messages(messages)
 ```
 
-Custom email backends should subclass `BaseEmailBackend` that is located in the `fastapi_mailman.backends.base` module.
-A custom email backend must implement the `send_messages(email_messages)` method.
-This method receives a list of `EmailMessage` instances and returns the number of successfully delivered messages.
-If your backend has any concept of a persistent session or connection, you should also implement the `open()` and `close()` methods.
+## Connection Management
 
-Refer to `fastapi_mailman.backends.smtp.EmailBackend` for a reference implementation.
+### Using Context Manager
 
-## Convenient functions
-
-### send_mail()
-*send_mail(subject, message, from_email, recipient_list, fail_silently=False, auth_user=None, auth_password=None, connection=None, html_message=None)*
-
-In most cases, you can send email using `Mail.send_mail()`.
-
-The subject, message, from_email and recipient_list parameters are required.
-
-- **subject**: A string.
-- **message**: A string.
-- **from_email**: A string. If None, Fastapi-Mailman will use the value of the MAIL_DEFAULT_SENDER configuration.
-- **recipient_list**: A list of strings, each an email address. Each member of `recipient_list` will see the other recipients in the “To:” field of the email message.
-- **fail_silently**: A boolean. When it’s False, `send_mail()` will raise an `smtplib.SMTPException` if an error occurs. See the smtplib docs for a list of possible exceptions, all of which are subclasses of `SMTPException`.
-- **auth_user**: The optional username to use to authenticate to the SMTP server. If this isn’t provided, Fastapi-Mailman will use the value of the MAIL_USERNAME configuration.
-- **auth_password**: The optional password to use to authenticate to the SMTP server. If this isn’t provided, Fastapi-Mailman will use the value of the MAIL_PASSWORD configuration.
-- **connection**: The optional email backend to use to send the mail. If unspecified, an instance of the default backend will be used. See the documentation on Email backends for more details.
-- **html_message**: If `html_message` is provided, the resulting email will be a multipart/alternative email with message as the text/plain content type and html_message as the text/html content type.
-
-The return value will be the number of successfully delivered messages (which can be 0 or 1 since it can only send one message).
-
-### send_mass_mail()
-
-*send_mass_mail(datatuple, fail_silently=False, auth_user=None, auth_password=None, connection=None)*
-
-`Mail.send_mass_mail()` is intended to handle mass emailing.
-
-datatuple is a tuple in which each element is in this format:
-
-```
-(subject, message, from_email, recipient_list)
-```
-`fail_silently`, `auth_user` and `auth_password` have the same functions as in `send_mail()`.
-
-Each separate element of datatuple results in a separate email message. As in `send_mail()`, recipients in the same `recipient_list` will all see the other addresses in the email messages’ “To:” field.
-
-For example, the following code would send two different messages to two different sets of recipients; however, only one connection to the mail server would be opened:
+The recommended way to manage connections:
 
 ```python
-from fastapi import FastAPI
-from fastapi_mailman import Mail
+async with mail.get_connection() as conn:
+    msg1 = EmailMessage(subject="First", body="...", to=["a@example.com"], connection=conn)
+    await msg1.send()
 
-app = FastAPI()
-mail = Mail(config)
-
-message1 = ('Subject here', 'Here is the message', 'from@example.com', ['first@example.com', 'other@example.com'])
-message2 = ('Another Subject', 'Here is another message', 'from@example.com', ['second@test.com'])
-await mail.send_mass_mail((message1, message2), fail_silently=False)
-# The return value will be the number of successfully delivered messages.
+    msg2 = EmailMessage(subject="Second", body="...", to=["b@example.com"], connection=conn)
+    await msg2.send()
+# Connection is automatically closed
 ```
 
-### send_mass_mail() vs. send_mail()
+### Manual Connection Management
 
-The main difference between `send_mass_mail()` and `send_mail()` is that `send_mail()` opens a connection to the mail server each time it’s executed, while `send_mass_mail()` uses a single connection for all of its messages. This makes `send_mass_mail()` slightly more efficient.
+```python
+connection = mail.get_connection()
+await connection.open()
 
-## Differences with Django
+try:
+    msg = EmailMessage(subject="Test", body="...", to=["test@example.com"], connection=connection)
+    await msg.send()
+finally:
+    await connection.close()
+```
 
-The name of configuration keys is different here, but you can easily resolve it.
+## Testing
 
-`mail_admins()` and `mail_managers()` methods were removed, you can write an alternative one in a minute if you need.
+Use the `locmem` backend for testing:
+
+```python
+import pytest
+from fastapi_mailman import Mail
+from fastapi_mailman.config import ConnectionConfig
+
+
+@pytest.fixture
+def mail():
+    config = ConnectionConfig(
+        MAIL_USERNAME="test@example.com",
+        MAIL_PASSWORD="test",
+        MAIL_SERVER="localhost",
+        MAIL_BACKEND="locmem",
+    )
+    return Mail(config)
+
+
+async def test_send_email(mail):
+    await mail.send_mail(
+        subject="Test Subject",
+        message="Test body",
+        recipient_list=["recipient@example.com"],
+    )
+
+    # Verify the email was "sent"
+    assert len(mail.outbox) == 1
+    sent = mail.outbox[0]
+    assert sent.subject == "Test Subject"
+    assert sent.to == ["recipient@example.com"]
+```
+
+## Template Support
+
+Use Jinja2 templates for HTML emails:
+
+```python
+from pathlib import Path
+
+config = ConnectionConfig(
+    MAIL_USERNAME="user@example.com",
+    MAIL_PASSWORD="password",
+    MAIL_SERVER="smtp.example.com",
+    TEMPLATE_FOLDER=Path("./templates"),
+)
+
+mail = Mail(config)
+
+# Get template engine
+env = config.template_engine()
+template = env.get_template("welcome.html")
+html_content = template.render(username="John", activation_link="https://...")
+
+await mail.send_mail(
+    subject="Welcome!",
+    message="Welcome to our service.",
+    recipient_list=["user@example.com"],
+    html_message=html_content,
+)
+```
+
+## Header Injection Protection
+
+FastAPI-Mailman protects against header injection attacks by forbidding newlines in header values:
+
+```python
+from fastapi_mailman import EmailMessage
+from fastapi_mailman.errors import BadHeaderError
+
+try:
+    msg = EmailMessage(
+        subject="Test\nInjection",  # Newline in subject!
+        body="...",
+        to=["test@example.com"],
+    )
+    msg.message()  # Raises BadHeaderError
+except BadHeaderError:
+    print("Invalid header detected!")
+```
+
+## API Reference
+
+### Mail Class
+
+The main entry point for sending emails.
+
+```python
+class Mail:
+    def __init__(self, config: ConnectionConfig) -> None: ...
+
+    def get_connection(
+        self,
+        backend: str | type[BaseEmailBackend] | None = None,
+        fail_silently: bool = False,
+        **kwargs,
+    ) -> BaseEmailBackend: ...
+
+    async def send_mail(
+        self,
+        subject: str,
+        message: str,
+        from_email: str | None = None,
+        recipient_list: Sequence[str] | None = None,
+        fail_silently: bool = False,
+        auth_user: str | None = None,
+        auth_password: str | None = None,
+        connection: BaseEmailBackend | None = None,
+        html_message: str | None = None,
+    ) -> int: ...
+
+    async def send_mass_mail(
+        self,
+        datatuple: Sequence[tuple[str, str, str, Sequence[str]]],
+        fail_silently: bool = False,
+        auth_user: str | None = None,
+        auth_password: str | None = None,
+        connection: BaseEmailBackend | None = None,
+    ) -> int: ...
+```
+
+### EmailMessage Class
+
+Represents a single email message.
+
+```python
+class EmailMessage:
+    def __init__(
+        self,
+        subject: str = "",
+        body: str = "",
+        from_email: str | None = None,
+        to: list[str] | tuple[str, ...] | None = None,
+        cc: list[str] | tuple[str, ...] | None = None,
+        bcc: list[str] | tuple[str, ...] | None = None,
+        reply_to: list[str] | tuple[str, ...] | None = None,
+        attachments: list[...] | None = None,
+        headers: dict[str, Any] | None = None,
+        connection: BaseEmailBackend | None = None,
+        mailman: Mail | None = None,
+    ) -> None: ...
+
+    async def send(self, fail_silently: bool = False) -> int: ...
+
+    def attach(
+        self,
+        filename: str | MIMEBase | None = None,
+        content: Any = None,
+        mimetype: str | None = None,
+    ) -> None: ...
+
+    def attach_file(self, path: str | Path, mimetype: str | None = None) -> None: ...
+```
+
+### EmailMultiAlternatives Class
+
+Email message with support for alternative content types (e.g., HTML).
+
+```python
+class EmailMultiAlternatives(EmailMessage):
+    def attach_alternative(self, content: str, mimetype: str) -> None: ...
+```

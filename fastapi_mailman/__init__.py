@@ -1,15 +1,46 @@
 """
-Tools for sending email.
+FastAPI-Mailman - Django-style email sending for FastAPI.
+
+A production-ready email library for FastAPI applications, porting Django's
+email implementation with full async support.
+
+Example:
+    ```python
+    from fastapi import FastAPI
+    from fastapi_mailman import Mail, EmailMessage
+    from fastapi_mailman.config import ConnectionConfig
+
+    app = FastAPI()
+
+    config = ConnectionConfig(
+        MAIL_USERNAME="user@example.com",
+        MAIL_PASSWORD="secret",
+        MAIL_SERVER="smtp.example.com",
+        MAIL_PORT=587,
+        MAIL_USE_TLS=True,
+    )
+    mail = Mail(config)
+
+    @app.get("/send")
+    async def send_email():
+        msg = EmailMessage(
+            subject="Hello",
+            body="This is the message",
+            to=["recipient@example.com"],
+        )
+        await msg.send()
+        return {"status": "sent"}
+    ```
 """
-import types as ty
-import typing as t
+
+from __future__ import annotations
+
 from importlib import import_module
+from typing import TYPE_CHECKING, Any
 
-from pydantic import EmailStr
-
-from fastapi_mailman.utils import DNS_NAME, CachedDnsName
-
-from .message import (
+from fastapi_mailman.errors import MailmanNotInitializedError
+from fastapi_mailman.globals import _get_global_mailman, set_mailman
+from fastapi_mailman.message import (
     DEFAULT_ATTACHMENT_MIME_TYPE,
     BadHeaderError,
     EmailMessage,
@@ -19,205 +50,322 @@ from .message import (
     forbid_multi_line_headers,
     make_msgid,
 )
+from fastapi_mailman.utils import DNS_NAME, CachedDnsName
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
+    import types as ty
+    from collections.abc import Sequence
+
     from fastapi_mailman.backends.base import BaseEmailBackend
+    from fastapi_mailman.config import ConnectionConfig
 
-    from .config import ConnectionConfig
-
-    Mailman = t.TypeVar("Mailman", bound="Mail")
-
-from . import globals
+__version__ = "1.0.0"
 
 __all__ = [
-    'CachedDnsName',
-    'DNS_NAME',
-    'EmailMessage',
-    'EmailMultiAlternatives',
-    'SafeMIMEText',
-    'SafeMIMEMultipart',
-    'DEFAULT_ATTACHMENT_MIME_TYPE',
-    'make_msgid',
-    'BadHeaderError',
-    'forbid_multi_line_headers',
-    'Mail',
+    "DEFAULT_ATTACHMENT_MIME_TYPE",
+    "DNS_NAME",
+    "BadHeaderError",
+    "CachedDnsName",
+    "EmailMessage",
+    "EmailMultiAlternatives",
+    "Mail",
+    "SafeMIMEMultipart",
+    "SafeMIMEText",
+    "__version__",
+    "forbid_multi_line_headers",
+    "make_msgid",
 ]
 
+# Available built-in backends
+AVAILABLE_BACKENDS = frozenset({"console", "dummy", "file", "smtp", "locmem"})
 
-available_backends = ['console', 'dummy', 'file', 'smtp', 'locmem']
 
+class _MailMixin:
+    """Mixin providing email sending functionality."""
 
-class _MailMixin(object):
-    def _get_backend_from_module(self, backend_module_name: str, backend_class_name: str) -> "BaseEmailBackend":
+    def _get_backend_from_module(
+        self,
+        backend_module_name: str,
+        backend_class_name: str,
+    ) -> type[BaseEmailBackend]:
         """
-        import the backend module and return the backend class.
+        Import and return a backend class from a module.
 
-        :param backend_module_name:
-            the string based module name from where the backend class will be imported.
+        Args:
+            backend_module_name: The module path to import from.
+            backend_class_name: The class name to retrieve.
 
-        :param backend_class_name:
-            the string based backend class name.
+        Returns:
+            The backend class.
         """
         backend_module: ty.ModuleType = import_module(backend_module_name)
-        backend: "BaseEmailBackend" = getattr(backend_module, backend_class_name)
-        return backend
+        return getattr(backend_module, backend_class_name)  # type: ignore[no-any-return]
 
-    def import_backend(self, backend_name: t.Any) -> "BaseEmailBackend":
+    def import_backend(self, backend_name: Any) -> type[BaseEmailBackend]:
         """
-        This is the base method to import the backend service.
-        This method will implement the feature for fastapi_mailman to take custom backends.
+        Import and return an email backend class.
 
-        Now you can create your own backend class and implement with fastapi mailman.
+        Supports:
+        - Short names: 'smtp', 'console', 'file', 'locmem', 'dummy'
+        - Full module paths: 'fastapi_mailman.backends.smtp'
+        - Full class paths: 'fastapi_mailman.backends.smtp.EmailBackend'
+        - Direct class references
 
+        Args:
+            backend_name: The backend identifier.
+
+        Returns:
+            The backend class.
         """
-        backend: t.Optional["BaseEmailBackend"] = None
-
         if not isinstance(backend_name, str):
-            backend = backend_name
+            return backend_name  # type: ignore[no-any-return]
 
-        else:
-            default_backend_loc: str = "fastapi_mailman.backends"
-            default_backend_class: str = "EmailBackend"
+        default_backend_loc = "fastapi_mailman.backends"
+        default_backend_class = "EmailBackend"
 
-            if "." not in backend_name:
-                backend_module_name: str = default_backend_loc + "." + backend_name
-                backend: "BaseEmailBackend" = self._get_backend_from_module(backend_module_name, default_backend_class)
+        if "." not in backend_name:
+            backend_module_name = f"{default_backend_loc}.{backend_name}"
+            return self._get_backend_from_module(backend_module_name, default_backend_class)
 
-            elif backend_name.endswith(default_backend_class):
-                backend_module_name, backend_class_name = backend_name.rsplit('.', 1)
-                backend: "BaseEmailBackend" = self._get_backend_from_module(backend_module_name, backend_class_name)
+        if backend_name.endswith(default_backend_class):
+            backend_module_name, backend_class_name = backend_name.rsplit(".", 1)
+            return self._get_backend_from_module(backend_module_name, backend_class_name)
 
-            else:
-                backend: "BaseEmailBackend" = self._get_backend_from_module(backend_name, default_backend_class)
+        return self._get_backend_from_module(backend_name, default_backend_class)
 
-        return backend
-
-    def get_connection(self, backend=None, fail_silently=False, **kwds) -> "BaseEmailBackend":
-        """Load an email backend and return an instance of it.
-
-        If backend is None (default), use app.config.MAIL_BACKEND.
-
-        Both fail_silently and other keyword arguments are used in the
-        constructor of the backend.
+    def get_connection(
+        self,
+        backend: str | type[BaseEmailBackend] | None = None,
+        fail_silently: bool = False,
+        **kwargs: Any,
+    ) -> BaseEmailBackend:
         """
-        if globals.MAILMAN is None:
-            raise NotImplementedError("Default Mail object isn't created yet.")
+        Load an email backend and return an instance.
+
+        Args:
+            backend: The backend to use. Defaults to the configured backend.
+            fail_silently: Whether to suppress connection errors.
+            **kwargs: Additional arguments passed to the backend constructor.
+
+        Returns:
+            An email backend instance.
+
+        Raises:
+            MailmanNotInitializedError: If Mail is not initialized.
+            RuntimeError: If the backend cannot be imported.
+        """
+        mailman = _get_global_mailman()
+        if mailman is None:
+            raise MailmanNotInitializedError()
 
         try:
-            backend = backend or globals.MAILMAN.backend
-
-            klass: "BaseEmailBackend" = self.import_backend(backend)
-
-        except ImportError:
-            err_msg = (
+            backend = backend or mailman.backend
+            klass = self.import_backend(backend)
+        except ImportError as exc:
+            raise RuntimeError(
                 f"Unable to import backend: {backend}. "
-                f"The available built-in mail backends are: {', '.join(available_backends)}"
-            )
-            raise RuntimeError(err_msg)
+                f"Available built-in backends: {', '.join(sorted(AVAILABLE_BACKENDS))}"
+            ) from exc
 
-        return klass(mailman=globals.MAILMAN, fail_silently=fail_silently, **kwds)
+        return klass(mailman=mailman, fail_silently=fail_silently, **kwargs)
 
     async def send_mail(
         self,
         subject: str,
         message: str,
-        from_email: t.Optional[EmailStr] = None,
-        recipient_list: t.Optional[t.List[EmailStr]] = None,
+        from_email: str | None = None,
+        recipient_list: Sequence[str] | None = None,
         fail_silently: bool = False,
-        auth_user: t.Optional[str] = None,
-        auth_password: t.Optional[str] = None,
-        connection: t.Optional["BaseEmailBackend"] = None,
-        html_message: t.Optional[str] = None,
-    ) -> t.Coroutine:
+        auth_user: str | None = None,
+        auth_password: str | None = None,
+        connection: BaseEmailBackend | None = None,
+        html_message: str | None = None,
+    ) -> int:
         """
-        Easy wrapper for sending a single message to a recipient list. All members
-        of the recipient list will see the other recipients in the 'To' field.
+        Send a single email message.
 
-        If auth_user is None, use the MAIL_USERNAME setting.
-        If auth_password is None, use the MAIL_PASSWORD setting.
+        This is a convenience wrapper for sending a single message to a
+        recipient list. All members of the recipient list will see the
+        other recipients in the 'To' field.
+
+        Args:
+            subject: The email subject.
+            message: The email body (plain text).
+            from_email: Sender's email. Defaults to MAIL_DEFAULT_SENDER.
+            recipient_list: List of recipient emails.
+            fail_silently: Whether to suppress sending errors.
+            auth_user: SMTP auth username. Defaults to MAIL_USERNAME.
+            auth_password: SMTP auth password. Defaults to MAIL_PASSWORD.
+            connection: Reuse an existing connection.
+            html_message: Optional HTML version of the message.
+
+        Returns:
+            Number of emails sent (0 or 1).
+
+        Raises:
+            MailmanNotInitializedError: If Mail is not initialized.
         """
-        if globals.MAILMAN is None:
-            raise NotImplementedError("Default Mail object isn't created yet.")
+        mailman = _get_global_mailman()
+        if mailman is None:
+            raise MailmanNotInitializedError()
 
         connection = connection or self.get_connection(
             username=auth_user,
             password=auth_password,
             fail_silently=fail_silently,
         )
+
         mail = EmailMultiAlternatives(
-            subject, message, from_email, recipient_list, connection=connection, mailman=globals.MAILMAN
+            subject,
+            message,
+            from_email,
+            list(recipient_list) if recipient_list else [],
+            connection=connection,
+            mailman=mailman,
         )
+
         if html_message:
-            mail.attach_alternative(html_message, 'text/html')
+            mail.attach_alternative(html_message, "text/html")
 
         return await mail.send()
 
     async def send_mass_mail(
         self,
-        datatuple: t.Tuple[str, str, str, t.List[EmailStr]],
+        datatuple: Sequence[tuple[str, str, str, Sequence[str]]],
         fail_silently: bool = False,
-        auth_user: t.Optional[str] = None,
-        auth_password: t.Optional[str] = None,
-        connection: "BaseEmailBackend" = None,
-    ) -> t.Coroutine:
+        auth_user: str | None = None,
+        auth_password: str | None = None,
+        connection: BaseEmailBackend | None = None,
+    ) -> int:
         """
-        Given a datatuple of (subject, message, from_email, recipient_list), send
-        each message to each recipient list. Return the number of emails sent.
+        Send multiple email messages efficiently.
 
-        If from_email is None, use the MAIL_DEFAULT_SENDER setting.
-        If auth_user and auth_password are set, use them to log in.
-        If auth_user is None, use the MAIL_USERNAME setting.
-        If auth_password is None, use the MAIL_PASSWORD setting.
+        Given a datatuple of (subject, message, from_email, recipient_list),
+        send each message to each recipient list using a single connection.
 
-        Note: The API for this method is frozen. New code wanting to extend the
-        functionality should use the EmailMessage class directly.
+        Args:
+            datatuple: Sequence of (subject, message, from_email, recipient_list).
+            fail_silently: Whether to suppress sending errors.
+            auth_user: SMTP auth username.
+            auth_password: SMTP auth password.
+            connection: Reuse an existing connection.
+
+        Returns:
+            Number of emails sent.
+
+        Raises:
+            MailmanNotInitializedError: If Mail is not initialized.
+
+        Note:
+            This API is frozen. For extending functionality, use
+            EmailMessage directly.
         """
-        if globals.MAILMAN is None:
-            raise NotImplementedError("Default Mail object isn't created yet.")
+        mailman = _get_global_mailman()
+        if mailman is None:
+            raise MailmanNotInitializedError()
 
         connection = connection or self.get_connection(
             username=auth_user,
             password=auth_password,
             fail_silently=fail_silently,
         )
+
         messages = [
-            EmailMessage(subject, message, sender, recipient, connection=connection, mailman=globals.MAILMAN)
+            EmailMessage(
+                subject,
+                message,
+                sender,
+                list(recipient),
+                connection=connection,
+                mailman=mailman,
+            )
             for subject, message, sender, recipient in datatuple
         ]
+
         return await connection.send_messages(messages)
 
 
 class Mail(_MailMixin):
-    """Manages email messaging
+    """
+    Main email management class for FastAPI-Mailman.
 
-    :param config: Default ConnectionConfig pydantic instance
+    Manages email configuration and provides methods for sending emails.
+    On initialization, registers itself as the global mailman instance.
+
+    Attributes:
+        config: The connection configuration.
+        server: SMTP server hostname.
+        port: SMTP server port.
+        username: SMTP authentication username.
+        password: SMTP authentication password.
+        use_tls: Whether to use STARTTLS.
+        use_ssl: Whether to use SSL/TLS.
+        default_sender: Default sender email address.
+        timeout: Connection timeout in seconds.
+        ssl_keyfile: Path to SSL key file.
+        ssl_certfile: Path to SSL certificate file.
+        use_localtime: Whether to use local time in headers.
+        file_path: Directory for file backend storage.
+        default_charset: Default character encoding.
+        backend: Email backend to use.
+
+    Example:
+        ```python
+        from fastapi_mailman import Mail
+        from fastapi_mailman.config import ConnectionConfig
+
+        config = ConnectionConfig(
+            MAIL_USERNAME="user@example.com",
+            MAIL_PASSWORD="secret",
+            MAIL_SERVER="smtp.example.com",
+            MAIL_PORT=587,
+            MAIL_USE_TLS=True,
+        )
+
+        mail = Mail(config)
+
+        # Send via helper method
+        await mail.send_mail(
+            subject="Hello",
+            message="World",
+            recipient_list=["recipient@example.com"],
+        )
+
+        # Or use EmailMessage directly
+        msg = EmailMessage(subject="Hello", body="World", to=["recipient@example.com"])
+        await msg.send()
+        ```
     """
 
-    def __init__(self, config: "ConnectionConfig"):
-        self.config: "ConnectionConfig" = config
-        self.state = self.initIns()
+    def __init__(self, config: ConnectionConfig) -> None:
+        """
+        Initialize the Mail instance.
 
-    def init_mail(self, config: "ConnectionConfig") -> "Mail":
-        config_dict = config.dict()
+        Args:
+            config: ConnectionConfig instance with email settings.
+        """
+        self.config = config
+        self._init_from_config(config)
+        set_mailman(self)
 
-        self.server = config_dict.get('MAIL_SERVER')
-        self.port = config_dict.get('MAIL_PORT')
-        self.username = config_dict.get('MAIL_USERNAME')
-        self.password = config_dict.get('MAIL_PASSWORD')
-        self.use_tls = config_dict.get('MAIL_USE_TLS')
-        self.use_ssl = config_dict.get('MAIL_USE_SSL')
-        self.default_sender = config_dict.get('MAIL_DEFAULT_SENDER')
-        self.timeout = config_dict.get('MAIL_TIMEOUT')
-        self.ssl_keyfile = config_dict.get('MAIL_SSL_KEYFILE')
-        self.ssl_certfile = config_dict.get('MAIL_SSL_CERTFILE')
-        self.use_localtime = config_dict.get('MAIL_USE_LOCALTIME')
-        self.file_path = config_dict.get('MAIL_FILE_PATH')
-        self.default_charset = config_dict.get('MAIL_DEFAULT_CHARSET')
-        self.backend = config_dict.get('MAIL_BACKEND')
-        return self
+    def _init_from_config(self, config: ConnectionConfig) -> None:
+        """Initialize attributes from configuration."""
+        config_dict = config.model_dump()
 
-    def initIns(self) -> "Mail":
-        state: "Mail" = self.init_mail(self.config)
-        # global MAILMAN
-        globals.MAILMAN = state
-        return state
+        self.server: str = config_dict["MAIL_SERVER"]
+        self.port: int = config_dict["MAIL_PORT"]
+        self.username: str = config_dict["MAIL_USERNAME"]
+        self.password: str = config_dict["MAIL_PASSWORD"]
+        self.use_tls: bool = config_dict["MAIL_USE_TLS"]
+        self.use_ssl: bool = config_dict["MAIL_USE_SSL"]
+        self.default_sender: str | None = config_dict["MAIL_DEFAULT_SENDER"]
+        self.timeout: int | None = config_dict["MAIL_TIMEOUT"]
+        self.ssl_keyfile: str | None = config_dict["MAIL_SSL_KEYFILE"]
+        self.ssl_certfile: str | None = config_dict["MAIL_SSL_CERTFILE"]
+        self.use_localtime: bool = config_dict["MAIL_USE_LOCALTIME"]
+        self.file_path: str | None = config_dict["MAIL_FILE_PATH"]
+        self.default_charset: str = config_dict["MAIL_DEFAULT_CHARSET"]
+        self.backend: str = config_dict["MAIL_BACKEND"]
+
+    def __repr__(self) -> str:
+        return f"<Mail server={self.server!r} port={self.port}>"
